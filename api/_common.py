@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import io
 import json
-import re
 import signal
 import sys
+import threading
 from contextlib import contextmanager, redirect_stdout
 from http.server import BaseHTTPRequestHandler
 from pathlib import Path
@@ -20,14 +20,6 @@ MAX_OUTPUT_SIZE = 64_000
 MAX_JSON_SIZE = 256_000
 TIME_LIMIT_SECONDS = 4
 
-FORBIDDEN_PATTERNS = [
-    (re.compile(r"\ballow\s+unsafe_python\s+true\b", re.IGNORECASE), "unsafe Python mode is disabled online"),
-    (re.compile(r"\bpython\s*(\{|\"|')", re.IGNORECASE), "Python blocks are disabled online"),
-    (re.compile(r"\bcustom\s+\w+", re.IGNORECASE), "custom code blocks are disabled online"),
-    (re.compile(r"\binput\s*\(", re.IGNORECASE), "input() is disabled online"),
-]
-
-
 class RequestError(Exception):
     def __init__(self, message: str, status: int = 400):
         super().__init__(message)
@@ -40,7 +32,10 @@ class TimeoutError(Exception):
 
 @contextmanager
 def time_limit(seconds: int):
-    if not hasattr(signal, "SIGALRM"):
+    # Vercel may execute Python functions in a worker thread. Python signals can
+    # only be registered from the main interpreter thread, so fall back to
+    # Vercel's own maxDuration limit when signals are unavailable here.
+    if not hasattr(signal, "SIGALRM") or threading.current_thread() is not threading.main_thread():
         yield
         return
 
@@ -82,9 +77,36 @@ def get_code(handler: BaseHTTPRequestHandler) -> str:
 
 
 def validate_code(code: str) -> None:
-    for pattern, message in FORBIDDEN_PATTERNS:
-        if pattern.search(code):
-            raise RequestError(message)
+    validate_tokens(code)
+
+
+def validate_tokens(code: str) -> None:
+    """Block unsafe executable features without blocking matching text in strings."""
+
+    from novadev.lexer import Lexer
+
+    tokens = Lexer(code).tokenize()
+    for index, token in enumerate(tokens):
+        next_token = next_significant_token(tokens, index + 1)
+        following_token = next_significant_token(tokens, index + 2)
+        if (
+            token.type == "ALLOW"
+            and next_token
+            and next_token.type == "UNSAFE_PYTHON"
+            and following_token
+            and following_token.type == "BOOLEAN"
+            and following_token.value is True
+        ):
+            raise RequestError("unsafe Python mode is disabled online")
+        if str(token.value).lower() == "input" and next_token and next_token.type == "LPAREN":
+            raise RequestError("input() is disabled online")
+
+
+def next_significant_token(tokens: list[Any], start: int) -> Any:
+    for token in tokens[start:]:
+        if token.type not in {"NEWLINE", "SEMICOLON"}:
+            return token
+    return None
 
 
 def json_safe(value: Any) -> Any:

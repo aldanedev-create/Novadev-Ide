@@ -38,14 +38,13 @@ The browser sends NovaDev source code to Python API functions:
 - `/api/tokens`
 - `/api/ast`
 
-The Python functions import NovaDev directly and execute in safe mode. The runner blocks:
+The Python functions import NovaDev directly and execute in safe mode. The runner allows NovaDev's safe Python bridge, but blocks:
 
 - `allow unsafe_python true`
-- raw `python { ... }` blocks
-- `custom ...` code blocks
 - `input()`
 
 It also enforces source size, output size, and short execution time limits.
+On Vercel, Python functions may run outside the main interpreter thread, so the API does not depend on `signal.alarm()` when the platform does not allow it. Vercel's function `maxDuration` remains the outer timeout.
 
 ### Phase 2: UI Preview And Sharing
 
