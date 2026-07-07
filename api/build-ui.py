@@ -4,7 +4,7 @@ import sys
 from http.server import BaseHTTPRequestHandler
 
 sys.path.append(os.path.dirname(__file__))
-from novadev_engine import tokenize
+from novadev_engine import build_ui
 
 
 class handler(BaseHTTPRequestHandler):
@@ -14,7 +14,8 @@ class handler(BaseHTTPRequestHandler):
     def do_POST(self):
         try:
             body = self.read_json()
-            self.send_json({"ok": True, "tokens": tokenize(body.get("code", ""))})
+            files = build_ui(body.get("code", ""))
+            self.send_json({"ok": True, "files": files, "previewHtml": files["index.html"]})
         except Exception as error:
             self.send_json({"ok": False, "error": f"error: {error}"}, 400)
 

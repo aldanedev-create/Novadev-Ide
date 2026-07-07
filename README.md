@@ -1,141 +1,76 @@
-# NovaDev Online IDE
+# NovaDev IDE
 
-This folder is a standalone Vercel-ready website for running NovaDev code online.
+NovaDev IDE is the browser learning and coding workspace for NovaDev. It combines a developer learning site with an online editor, shell, lexer inspector, AST inspector, output terminal, and UI builder.
 
-It is built as:
+The interface is inspired by VS Code-style workspaces and beginner learning sites: developers can read a lesson, open the code in the editor, run it, inspect how NovaDev tokenizes/parses it, then build a UI preview from the same `.nova` source.
 
-- Vue + Vite frontend
-- Python Vercel Functions for NovaDev execution
-- Node Vercel Function for share URLs
-- Vendored `novadev/` language runtime so the deployment is self-contained
+## Pages
 
-## What It Implements
+- `Learn` teaches NovaDev with beginner, app-building, backend, and advanced lessons.
+- `Editor` is the main `.nova` coding page.
+- `Build UI` generates a live preview plus `index.html`, `style.css`, and `app.js`.
+- `Output` shows program print output and runtime errors.
+- `Tokens` shows lexer output.
+- `AST` shows parser/project output.
+- `Shell` runs one command at a time and keeps session history.
+- `Examples` loads complete NovaDev examples into the editor.
+- `Settings` controls editor font size, line wrapping, theme, and browser saves.
 
-## IDE Experience
+## Course Content
 
-The interface follows the same practical pattern as browser coding tools such as Online Python:
+The lesson data now follows a beginner-to-advanced path:
 
-- file tab for the active `.nova` file
-- Run, Tokens, AST, Build UI, Share, Save, Load Save, and Download actions
-- terminal, problems, tokens, AST, preview, and shell panels
-- copy/download output
-- light/dark theme toggle
-- horizontal split or vertical stacked layout
-- font-size and line-wrap settings
-- browser autosave while typing
-- local browser save/load
-- shareable URL hash
-- keyboard shortcuts:
-  - `Ctrl + Enter` or `F8`: run code
-  - `Ctrl + S` or `F10`: save in browser
-  - `Ctrl + H` or `F9`: share code
+- Getting started with source code, tokens, AST output, and runtime execution.
+- General programming with variables, strings, lists, objects, operators, control flow, loops, functions, and debugging.
+- Object-oriented programming with classes, objects, constructors, methods, `this`, inheritance, and composition.
+- App building with `app`, `project`, modes, tables, pages, workflows, routes, auth, SQLite, SQLAlchemy, Vue, Flask, and Tailwind.
+- Standard-library topics including Nova math, dates/time, JSON-style data, HTTP/API clients, file read/write/append/delete, SQLite, CLI workflow, and security.
+- Advanced development with automations, custom frontend files, custom backend Python modules, packages, API keys, environment variables, third-party APIs, testing, deployment, and capstone projects.
 
-### Phase 1: Safe One-Shot Runner
-
-The browser sends NovaDev source code to Python API functions:
-
-- `/api/run`
-- `/api/tokens`
-- `/api/ast`
-
-The Python functions import NovaDev directly and execute in safe mode. The runner allows NovaDev's safe Python bridge, but blocks:
-
-- `allow unsafe_python true`
-- `input()`
-
-It also enforces source size, output size, and short execution time limits.
-On Vercel, Python functions may run outside the main interpreter thread, so the API does not depend on `signal.alarm()` when the platform does not allow it. Vercel's function `maxDuration` remains the outer timeout.
-
-### Phase 2: UI Preview And Sharing
-
-The frontend can call:
-
-- `/api/build_ui`
-- `/api/share`
-
-`build_ui` generates temporary NovaDev UI files and returns them to the browser as an iframe preview. `share` encodes code into a URL hash, so no database is required.
-
-### Phase 3: Browser Shell Replay
-
-The Shell tab feels like:
+The longer teaching outline lives in:
 
 ```text
-nova> let name = "Aldane"
-nova> print(name)
-Aldane
+../docs/NOVADEV_DEVELOPER_COURSE.md
 ```
 
-Because Vercel functions are short-lived, the browser shell does not hold a permanent Python process. Instead, it keeps session source in the browser and replays the full session on each command.
+## Vercel Deployment
 
-## Deploy To Vercel
-
-From this folder:
+This folder is ready for Vercel:
 
 ```bash
 npm install
 npm run build
-vercel
+vercel deploy
 ```
 
-When Vercel asks for the project root, use this folder:
+The Vue frontend calls these serverless endpoints:
 
-```text
-nova ide
-```
+- `/api/run`
+- `/api/tokens`
+- `/api/ast`
+- `/api/build-ui`
 
-You can also drag/drop or upload this folder to Vercel if your workflow supports that.
+The API uses a small safe NovaDev engine written in Python. It does not use Docker and does not run raw Python blocks online.
 
 ## Local Development
 
-Use Vercel's local dev server so the frontend and API functions run together:
-
 ```bash
 npm install
-npx vercel dev
-```
-
-Plain Vite development works for the frontend only:
-
-```bash
 npm run dev
 ```
 
-## File Structure
+Open the local Vite URL, usually:
 
 ```text
-nova ide/
-  src/
-    App.vue
-    api.js
-    examples.js
-    main.js
-    styles.css
-
-  api/
-    _common.py
-    run.py
-    tokens.py
-    ast.py
-    build_ui.py
-    health.py
-    share.js
-
-  novadev/
-    copied NovaDev Python language runtime
-
-  package.json
-  vercel.json
-  requirements.txt
+http://localhost:5173
 ```
 
-## Why It Does Not Use Docker
+## Shortcuts
 
-This version is designed for Vercel Functions, so it avoids Docker and avoids a permanent backend process. The safety model is based on:
+- `Ctrl + Enter` runs the current NovaDev file.
+- `Ctrl + B` builds the UI preview.
+- `Ctrl + S` saves the current file in browser storage.
 
-- direct interpreter calls instead of shell commands
-- short `maxDuration`
-- source/output size limits
-- blocked unsafe NovaDev/Python features
-- temporary folders for generated UI previews
+## Notes
 
-For a public production coding site, Docker or a stronger sandbox is still safer for arbitrary user code. This project is a practical Vercel-first prototype.
+The online IDE is designed for learning, demos, shell-style testing, lexer/AST inspection, and UI previews. Full local project generation still belongs to the installed NovaDev CLI and package manager.

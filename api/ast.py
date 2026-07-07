@@ -1,24 +1,35 @@
-from __future__ import annotations
-
+import json
+import os
+import sys
 from http.server import BaseHTTPRequestHandler
 
-from ._common import get_code, handle_options, send_error, send_json, time_limit
+sys.path.append(os.path.dirname(__file__))
+from novadev_engine import parse_ast
 
 
 class handler(BaseHTTPRequestHandler):
     def do_OPTIONS(self):
-        handle_options(self)
+        self.send_json({"ok": True})
 
     def do_POST(self):
         try:
-            from novadev.ast_nodes import node_to_data
-            from novadev.lexer import Lexer
-            from novadev.parser import Parser
+            body = self.read_json()
+            self.send_json({"ok": True, "ast": parse_ast(body.get("code", ""))})
+        except Exception as error:
+            self.send_json({"ok": False, "error": f"error: {error}"}, 400)
 
-            code = get_code(self)
-            with time_limit(4):
-                tokens = Lexer(code).tokenize()
-                program = Parser(tokens).parse()
-            send_json(self, {"ok": True, "ast": node_to_data(program)})
-        except Exception as exc:  # noqa: BLE001 - API returns readable errors.
-            send_error(self, exc)
+    def read_json(self):
+        length = int(self.headers.get("content-length", "0") or "0")
+        raw = self.rfile.read(length).decode("utf-8") if length else "{}"
+        return json.loads(raw or "{}")
+
+    def send_json(self, payload, status=200):
+        data = json.dumps(payload).encode("utf-8")
+        self.send_response(status)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Methods", "POST, OPTIONS")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type")
+        self.send_header("Content-Length", str(len(data)))
+        self.end_headers()
+        self.wfile.write(data)

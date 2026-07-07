@@ -1,25 +1,12 @@
 {
-  "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "npm run build",
-  "outputDirectory": "dist",
-  "functions": {
-    "api/run.py": {
-      "maxDuration": 5
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/$1"
     },
-    "api/tokens.py": {
-      "maxDuration": 5
-    },
-    "api/ast.py": {
-      "maxDuration": 5
-    },
-    "api/build_ui.py": {
-      "maxDuration": 5
-    },
-    "api/health.py": {
-      "maxDuration": 5
-    },
-    "api/share.js": {
-      "maxDuration": 5
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
-  }
+  ]
 }

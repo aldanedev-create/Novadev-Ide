@@ -34,7 +34,7 @@ class BackendGenerator:
         frontend_relative = os.path.relpath(Path(frontend_dir), output_path)
 
         files = {
-            output_path / "requirements.txt": "Flask>=3.0,<4.0\n",
+            output_path / "requirements.txt": "Flask>=3.0,<4.0\nSQLAlchemy>=2.0,<3.0\n",
             output_path / "config.py": self.config_py(frontend_relative),
             output_path / "models.py": self.models_py(runtime, ir),
             output_path / "routes.py": self.routes_py(runtime),
@@ -48,7 +48,13 @@ class BackendGenerator:
     def config_py(self, frontend_relative: str) -> str:
         return f'''"""Generated NovaDev 1.1 Flask backend config."""
 
-DATABASE_URL = "sqlite:///database.db"
+import os
+from pathlib import Path
+
+
+BACKEND_DIR = Path(__file__).resolve().parent
+DATABASE_PATH = BACKEND_DIR / "database.db"
+DATABASE_URL = os.environ.get("DATABASE_URL", "sqlite:///" + DATABASE_PATH.as_posix())
 FRONTEND_RELATIVE = {frontend_relative!r}
 API_PREFIX = "/api"
 '''
@@ -72,14 +78,46 @@ API_PREFIX = "/api"
         seed_data = {name: sample_rows(table, ir.mode) for name, table in runtime.tables.items()}
         primary_keys = {name: primary_key(table) for name, table in runtime.tables.items()}
 
-        return f'''"""Generated NovaDev 1.1 model and data helpers."""
+        return (
+            '''"""Generated NovaDev 1.1 SQLAlchemy model and data helpers."""
 
-from copy import deepcopy
+from __future__ import annotations
 
-TABLES = {tables!r}
-API_TABLES = {api_tables!r}
-PRIMARY_KEYS = {primary_keys!r}
-DATA = deepcopy({seed_data!r})
+import sqlite3
+from pathlib import Path
+
+from sqlalchemy import (
+    Boolean,
+    Column,
+    Float,
+    Integer,
+    MetaData,
+    String,
+    Table,
+    Text,
+    create_engine,
+    delete,
+    event,
+    func,
+    insert,
+    select,
+    update,
+)
+
+from config import DATABASE_URL
+
+TABLES = '''
+            + repr(tables)
+            + '''
+API_TABLES = '''
+            + repr(api_tables)
+            + '''
+PRIMARY_KEYS = '''
+            + repr(primary_keys)
+            + '''
+SEED_DATA = '''
+            + repr(seed_data)
+            + '''
 
 
 def table_for_resource(resource):
@@ -94,13 +132,112 @@ def primary_key(table_name):
     return PRIMARY_KEYS.get(table_name, "id")
 
 
+def sqlite_database_path():
+    if not DATABASE_URL.startswith("sqlite:///"):
+        return None
+    raw_path = DATABASE_URL.replace("sqlite:///", "", 1)
+    if raw_path in {"", ":memory:"}:
+        return None
+    database_path = Path(raw_path)
+    if not database_path.is_absolute():
+        database_path = Path(__file__).resolve().parent / raw_path
+    return database_path
+
+
+def prepare_sqlite_database():
+    database_path = sqlite_database_path()
+    if database_path is None:
+        return
+    database_path.parent.mkdir(parents=True, exist_ok=True)
+    with sqlite3.connect(database_path) as connection:
+        connection.execute("PRAGMA foreign_keys = ON")
+
+
+def sql_type_for_field(field):
+    lowered = str(field.get("type", "text")).lower()
+    if field.get("auto"):
+        return Integer
+    if lowered in {"int", "integer"}:
+        return Integer
+    if lowered in {"number", "float", "double", "money", "currency", "decimal"}:
+        return Float
+    if lowered in {"bool", "boolean"}:
+        return Boolean
+    if lowered in {"string", "varchar", "email"}:
+        return String(255)
+    return Text
+
+
+def column_for_field(field, key_name):
+    name = field["name"]
+    is_primary = name == key_name or bool(field.get("auto"))
+    kwargs = {
+        "primary_key": is_primary,
+        "nullable": False if is_primary or "required" in field.get("attributes", []) else True,
+    }
+    if field.get("auto"):
+        kwargs["autoincrement"] = True
+    if field.get("unique"):
+        kwargs["unique"] = True
+    return Column(name, sql_type_for_field(field), **kwargs)
+
+
+def build_sql_tables():
+    sql_tables = {}
+    for table_name, fields in TABLES.items():
+        key_name = primary_key(table_name)
+        columns = [column_for_field(field, key_name) for field in fields]
+        if not columns:
+            columns.append(Column("id", Integer, primary_key=True, autoincrement=True))
+        sql_tables[table_name] = Table(table_name, metadata, *columns)
+    return sql_tables
+
+
+prepare_sqlite_database()
+engine = create_engine(
+    DATABASE_URL,
+    future=True,
+    connect_args={"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {},
+)
+
+
+@event.listens_for(engine, "connect")
+def set_sqlite_pragma(dbapi_connection, connection_record):
+    if isinstance(dbapi_connection, sqlite3.Connection):
+        cursor = dbapi_connection.cursor()
+        cursor.execute("PRAGMA foreign_keys = ON")
+        cursor.close()
+
+
+metadata = MetaData()
+SQL_TABLES = build_sql_tables()
+
+
+def sql_table(table_name):
+    table = SQL_TABLES.get(table_name)
+    if table is None:
+        raise KeyError(f"Unknown table: {table_name}")
+    return table
+
+
+def row_to_dict(row):
+    if row is None:
+        return None
+    return dict(row)
+
+
 def list_rows(table_name):
-    return DATA.setdefault(table_name, [])
+    table = sql_table(table_name)
+    with engine.connect() as connection:
+        rows = connection.execute(select(table)).mappings().all()
+    return [row_to_dict(row) for row in rows]
 
 
 def public_row(table_name, row):
-    secure_fields = {{field["name"] for field in table_schema(table_name) if field.get("secure")}}
-    return {{name: value for name, value in row.items() if name not in secure_fields}}
+    if row is None:
+        return None
+    secure_fields = {field["name"] for field in table_schema(table_name) if field.get("secure")}
+    return {name: value for name, value in row.items() if name not in secure_fields}
 
 
 def public_rows(table_name):
@@ -108,63 +245,96 @@ def public_rows(table_name):
 
 
 def count_rows(table_name):
-    return len(list_rows(table_name))
+    table = sql_table(table_name)
+    with engine.connect() as connection:
+        return int(connection.execute(select(func.count()).select_from(table)).scalar_one())
 
 
 def sum_rows(table_name, field_name):
-    return sum(float(row.get(field_name) or 0) for row in list_rows(table_name))
+    table = sql_table(table_name)
+    if field_name not in table.c.keys():
+        return 0
+    with engine.connect() as connection:
+        value = connection.execute(select(func.coalesce(func.sum(table.c[field_name]), 0))).scalar_one()
+    return float(value or 0)
 
 
 def get_row(table_name, row_id):
+    table = sql_table(table_name)
     key = primary_key(table_name)
-    for row in list_rows(table_name):
-        if str(row.get(key)) == str(row_id):
-            return row
-    return None
+    if key not in table.c.keys():
+        return None
+    with engine.connect() as connection:
+        row = connection.execute(select(table).where(table.c[key] == row_id)).mappings().first()
+    return row_to_dict(row)
 
 
 def create_row(table_name, row):
-    rows = list_rows(table_name)
+    table = sql_table(table_name)
     clean = sanitize_row(table_name, row)
-    for field in table_schema(table_name):
-        if field.get("auto") and field["name"] not in clean:
-            clean[field["name"]] = next_id(table_name)
-    rows.append(clean)
+    with engine.begin() as connection:
+        result = connection.execute(insert(table).values(**clean))
+        inserted_key = result.inserted_primary_key[0] if result.inserted_primary_key else None
+    key = primary_key(table_name)
+    if inserted_key is not None:
+        created = get_row(table_name, inserted_key)
+        if created is not None:
+            return created
+    if key in clean:
+        created = get_row(table_name, clean[key])
+        if created is not None:
+            return created
     return clean
 
 
 def update_row(table_name, row_id, values):
-    row = get_row(table_name, row_id)
-    if row is None:
+    table = sql_table(table_name)
+    key = primary_key(table_name)
+    if key not in table.c.keys():
         return None
-    row.update(sanitize_row(table_name, values, partial=True))
-    return row
+    clean = sanitize_row(table_name, values, partial=True)
+    if clean:
+        with engine.begin() as connection:
+            connection.execute(update(table).where(table.c[key] == row_id).values(**clean))
+    return get_row(table_name, row_id)
 
 
 def delete_row(table_name, row_id):
-    rows = list_rows(table_name)
+    table = sql_table(table_name)
     key = primary_key(table_name)
-    for index, row in enumerate(rows):
-        if str(row.get(key)) == str(row_id):
-            return rows.pop(index)
-    return None
+    existing = get_row(table_name, row_id)
+    if existing is None or key not in table.c.keys():
+        return None
+    with engine.begin() as connection:
+        connection.execute(delete(table).where(table.c[key] == row_id))
+    return existing
+
+
+def clear_rows(table_name):
+    table = sql_table(table_name)
+    with engine.begin() as connection:
+        connection.execute(delete(table))
 
 
 def next_id(table_name):
+    table = sql_table(table_name)
     key = primary_key(table_name)
-    current = [int(row.get(key, 0)) for row in list_rows(table_name) if str(row.get(key, "")).isdigit()]
-    return (max(current) if current else 0) + 1
+    if key not in table.c.keys():
+        return 1
+    with engine.connect() as connection:
+        value = connection.execute(select(func.max(table.c[key]))).scalar_one()
+    return int(value or 0) + 1
 
 
-def sanitize_row(table_name, values, partial=False):
+def sanitize_row(table_name, values, partial=False, include_auto=False):
     fields = table_schema(table_name)
-    allowed = {{field["name"]: field for field in fields}}
-    clean = {{}}
-    for name, value in (values or {{}}).items():
+    allowed = {field["name"]: field for field in fields}
+    clean = {}
+    for name, value in (values or {}).items():
         if name not in allowed:
             continue
         field = allowed[name]
-        if field.get("auto"):
+        if field.get("auto") and not include_auto:
             continue
         clean[name] = coerce_value(value, field.get("type", "text"))
 
@@ -179,25 +349,61 @@ def sanitize_row(table_name, values, partial=False):
 
 def coerce_value(value, field_type):
     lowered = str(field_type).lower()
-    if lowered in {{"int", "number"}}:
-        return int(value or 0)
-    if lowered in {{"money", "currency"}}:
-        return float(value or 0)
-    if lowered in {{"bool", "boolean"}}:
+    if lowered in {"int", "integer", "auto"}:
+        try:
+            return int(float(value or 0))
+        except (TypeError, ValueError):
+            return 0
+    if lowered in {"number", "float", "double", "money", "currency", "decimal"}:
+        try:
+            return float(value or 0)
+        except (TypeError, ValueError):
+            return 0.0
+    if lowered in {"bool", "boolean"}:
         if isinstance(value, bool):
             return value
-        return str(value).lower() in {{"true", "1", "yes", "on"}}
+        return str(value).lower() in {"true", "1", "yes", "on"}
     return "" if value is None else value
 
 
 def default_value(field_type):
     lowered = str(field_type).lower()
-    if lowered in {{"int", "number", "money", "currency"}}:
+    if lowered in {"int", "integer", "auto"}:
         return 0
-    if lowered in {{"bool", "boolean"}}:
+    if lowered in {"number", "float", "double", "money", "currency", "decimal"}:
+        return 0.0
+    if lowered in {"bool", "boolean"}:
         return False
     return ""
+
+
+def seed_database():
+    for table_name, rows in SEED_DATA.items():
+        if not rows or count_rows(table_name) > 0:
+            continue
+        table = sql_table(table_name)
+        with engine.begin() as connection:
+            for row in rows:
+                connection.execute(insert(table).values(**sanitize_row(table_name, row, include_auto=True)))
+
+
+def init_db():
+    metadata.create_all(engine)
+    seed_database()
+
+
+def database_status():
+    database_path = sqlite_database_path()
+    return {
+        "url": DATABASE_URL,
+        "path": str(database_path) if database_path else "",
+        "tables": list(SQL_TABLES.keys()),
+    }
+
+
+init_db()
 '''
+        )
 
     def routes_py(self, runtime: Runtime) -> str:
         route_entries = []
@@ -282,8 +488,10 @@ if str(BACKEND_DIR) not in sys.path:
 from models import (
     API_TABLES,
     TABLES,
+    clear_rows,
     count_rows,
     create_row,
+    database_status,
     delete_row,
     get_row,
     list_rows,
@@ -292,6 +500,7 @@ from models import (
     public_rows,
     sum_rows,
     table_for_resource,
+    update_row,
 )
 from routes import ROUTES, handle_declared_route
 
@@ -425,7 +634,7 @@ def schema():
 
 @app.get("/api/health")
 def health():
-    return jsonify({{"ok": True, "frontend": FRONTEND_DIR.exists()}})
+    return jsonify({{"ok": True, "frontend": FRONTEND_DIR.exists(), "database": database_status()}})
 
 
 if __name__ == "__main__":
@@ -487,9 +696,10 @@ def checkout():
             for cart_row in cart_rows:
                 product = get_row(product_table, cart_row.get(cart_product_id))
                 if product:
-                    product[stock_field] = max(0, int(product.get(stock_field) or 0) - int(cart_row.get(cart_quantity) or 1))
+                    next_stock = max(0, int(product.get(stock_field) or 0) - int(cart_row.get(cart_quantity) or 1))
+                    update_row(product_table, product.get(primary_key(product_table)), {stock_field: next_stock})
 
-    list_rows(cart_table).clear()
+    clear_rows(cart_table)
     return jsonify(
         {
             "order": public_row(order_table, order),
@@ -506,6 +716,7 @@ def checkout():
         return f"""# Generated NovaDev Flask Backend
 
 This backend serves the generated NovaDev UI and JSON APIs from one Flask app.
+It stores table data in `database.db` using SQLite plus SQLAlchemy.
 
 ## Setup
 
@@ -525,6 +736,15 @@ The app expects frontend files at:
 ```txt
 {frontend_relative}
 ```
+
+Database file:
+
+```txt
+backend/database.db
+```
+
+The first app start creates SQLite tables from NovaDev `table` declarations and
+seeds sample rows when a table is empty.
 
 Build them from the project root with:
 
