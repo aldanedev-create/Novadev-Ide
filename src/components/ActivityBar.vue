@@ -1,5 +1,5 @@
 <script setup>
-import { Boxes, Braces, Eye, FileCode2, GraduationCap, Play, Settings, TerminalSquare } from "lucide-vue-next";
+import { Boxes, Braces, Eye, FileCode2, FolderKanban, GraduationCap, Play, Settings, TerminalSquare } from "lucide-vue-next";
 
 defineProps({
   active: { type: String, default: "learn" },
@@ -9,6 +9,7 @@ defineEmits(["navigate"]);
 
 const items = [
   { id: "learn", label: "Learn", icon: GraduationCap },
+  { id: "projects", label: "Learning Projects", icon: FolderKanban },
   { id: "editor", label: "Editor", icon: FileCode2 },
   { id: "preview", label: "Build UI", icon: Eye },
   { id: "output", label: "Output", icon: Play },

@@ -12,7 +12,7 @@ defineEmits(["run", "build", "toggle-theme", "navigate"]);
 
 <template>
   <header class="title-bar">
-    <div class="brand-mark" aria-label="NovaDev">ND</div>
+    <div class="brand-mark" aria-label="NovaDev"><img src="/novadev-logo.svg" alt="" /></div>
     <div class="title-copy">
       <strong>NovaDev IDE</strong>
       <span>Learn, code, run, inspect, and build UI in one workspace.</span>

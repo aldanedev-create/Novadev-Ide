@@ -5,7 +5,7 @@ import { Code2, Eye, RefreshCw } from "lucide-vue-next";
 const props = defineProps({
   preview: {
     type: Object,
-    default: () => ({ html: "", css: "", js: "", document: "" }),
+    default: () => ({ html: "", css: "", js: "", document: "", files: {} }),
   },
   running: { type: Boolean, default: false },
 });
@@ -13,11 +13,15 @@ const props = defineProps({
 defineEmits(["build"]);
 
 const activeFile = ref("index.html");
-const files = computed(() => ({
-  "index.html": props.preview.html || "",
-  "style.css": props.preview.css || "",
-  "app.js": props.preview.js || "",
-}));
+const files = computed(() =>
+  Object.keys(props.preview.files || {}).length
+    ? props.preview.files
+    : {
+        "index.html": props.preview.html || "",
+        "style.css": props.preview.css || "",
+        "app.js": props.preview.js || "",
+      },
+);
 </script>
 
 <template>

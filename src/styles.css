@@ -9,6 +9,7 @@
 
 * {
   box-sizing: border-box;
+  letter-spacing: 0;
 }
 
 html,
@@ -92,11 +93,14 @@ button:disabled {
   display: grid;
   place-items: center;
   border-radius: 6px;
-  background: #22c55e;
-  color: #07130b;
-  font-weight: 800;
-  font-size: 12px;
+  overflow: hidden;
   flex: 0 0 auto;
+}
+
+.brand-mark img {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 
 .title-copy {
@@ -324,6 +328,23 @@ button:disabled {
   color: var(--text);
 }
 
+.tab-row .book-tab {
+  min-width: 92px;
+  height: 35px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-right: 1px solid var(--border);
+  color: var(--accent);
+  text-transform: capitalize;
+  text-decoration: none;
+}
+
+.tab-row .book-tab:hover {
+  background: var(--panel-soft);
+  color: var(--text);
+}
+
 .page {
   min-width: 0;
   min-height: 0;
@@ -406,7 +427,7 @@ button:disabled {
 
 .lesson-hero h1 {
   margin: 10px 0;
-  font-size: clamp(32px, 6vw, 58px);
+  font-size: 46px;
   line-height: 1;
 }
 
@@ -853,6 +874,608 @@ kbd {
   font-size: 12px;
 }
 
+.section-kicker,
+.course-number,
+.projects-header > span,
+.course-header > span,
+.project-band-heading span,
+.capstone-band > div > span {
+  color: var(--success);
+  font-size: 12px;
+  font-weight: 750;
+  text-transform: uppercase;
+}
+
+.curriculum-page,
+.course-page,
+.learning-projects-page {
+  background: var(--bg);
+}
+
+.curriculum-header,
+.course-header,
+.projects-header {
+  padding: 34px 38px;
+  border-bottom: 1px solid var(--border);
+  background: var(--panel);
+}
+
+.curriculum-header {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 28px;
+}
+
+.curriculum-header > div:first-child,
+.course-header,
+.projects-header {
+  max-width: 960px;
+}
+
+.curriculum-header h1,
+.course-header h1,
+.projects-header h1 {
+  margin: 8px 0 10px;
+  color: var(--text);
+  font-size: 40px;
+  line-height: 1.1;
+}
+
+.curriculum-header p,
+.course-header p,
+.projects-header p {
+  max-width: 800px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 16px;
+  line-height: 1.65;
+}
+
+.curriculum-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+.curriculum-summary {
+  min-height: 62px;
+  display: flex;
+  align-items: center;
+  gap: 26px;
+  padding: 10px 38px;
+  border-bottom: 1px solid var(--border);
+  color: var(--muted);
+}
+
+.curriculum-summary span {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.curriculum-summary strong {
+  color: var(--text);
+  font-size: 20px;
+}
+
+.curriculum-summary .text-command {
+  margin-left: auto;
+}
+
+.text-command {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 0;
+  padding: 5px 0;
+  background: transparent;
+  color: var(--accent);
+}
+
+.text-command:hover {
+  color: var(--text);
+}
+
+.track-list {
+  width: min(1180px, calc(100% - 44px));
+  margin: 22px auto 48px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.track-row {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr) 150px;
+  gap: 20px;
+  align-items: center;
+  padding: 22px;
+  background: var(--panel);
+}
+
+.track-row + .track-row {
+  border-top: 1px solid var(--border);
+}
+
+.track-row:hover {
+  background: var(--panel-strong);
+}
+
+.track-order {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--success);
+  font-family: var(--font-mono);
+  font-weight: 800;
+}
+
+.track-copy {
+  min-width: 0;
+}
+
+.track-meta,
+.course-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.track-copy h2 {
+  margin: 6px 0;
+  font-size: 21px;
+}
+
+.track-copy p {
+  margin: 0 0 12px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.progress-line {
+  width: 100%;
+  height: 5px;
+  overflow: hidden;
+  background: var(--panel-soft);
+}
+
+.progress-line span {
+  display: block;
+  height: 100%;
+  background: var(--success);
+}
+
+.track-copy small {
+  display: block;
+  margin-top: 6px;
+  color: var(--muted);
+}
+
+.track-open {
+  min-height: 44px;
+  display: grid;
+  grid-template-columns: 20px 1fr 16px;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 9px 11px;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.track-open:hover {
+  border-color: var(--accent);
+}
+
+.course-header .text-command,
+.projects-header .text-command {
+  margin-bottom: 24px;
+}
+
+.course-meta {
+  margin-top: 18px;
+}
+
+.course-meta span {
+  border-left: 2px solid var(--success);
+  padding-left: 8px;
+}
+
+.course-layout {
+  width: min(1180px, calc(100% - 44px));
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 20px;
+  margin: 22px auto 48px;
+}
+
+.course-lessons,
+.course-projects,
+.project-band,
+.capstone-band {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--panel);
+}
+
+.section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px;
+  border-bottom: 1px solid var(--border);
+}
+
+.section-heading span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.section-heading h2 {
+  margin: 4px 0 0;
+  font-size: 20px;
+}
+
+.section-heading > strong {
+  color: var(--success);
+  font-family: var(--font-mono);
+  font-size: 18px;
+}
+
+.course-lesson-row,
+.capstone-row {
+  width: 100%;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 20px 32px minmax(0, 1fr) 18px;
+  align-items: center;
+  gap: 10px;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  padding: 14px 18px;
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+}
+
+.course-lesson-row:hover,
+.capstone-row:hover {
+  background: var(--panel-strong);
+}
+
+.course-lesson-row:last-child,
+.capstone-row:last-child {
+  border-bottom: 0;
+}
+
+.complete-icon {
+  color: var(--success);
+}
+
+.lesson-number {
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+.course-lesson-copy,
+.capstone-row > span {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.course-lesson-copy small,
+.capstone-row small {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.course-projects {
+  align-self: start;
+  padding: 22px;
+}
+
+.course-projects > svg {
+  color: var(--success);
+}
+
+.course-projects > span {
+  display: block;
+  margin-top: 12px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.course-projects h2 {
+  margin: 5px 0 14px;
+  font-size: 21px;
+}
+
+.course-projects ul,
+.challenge-instructions ul,
+.project-band ul {
+  margin: 0 0 18px;
+  padding-left: 20px;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.challenge-page {
+  overflow: hidden;
+  display: grid;
+  grid-template-rows: 44px minmax(0, 1fr);
+}
+
+.challenge-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 14px;
+  border-bottom: 1px solid var(--border);
+  background: var(--panel);
+}
+
+.completion-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.completion-status.complete {
+  color: var(--success);
+}
+
+.challenge-workspace {
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(340px, 42%) minmax(0, 1fr);
+}
+
+.challenge-instructions {
+  min-width: 0;
+  overflow: auto;
+  padding: 28px 30px 56px;
+  border-right: 1px solid var(--border);
+  background: var(--panel);
+}
+
+.challenge-instructions header > span {
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.challenge-instructions h1 {
+  margin: 8px 0 12px;
+  font-size: 34px;
+  line-height: 1.15;
+}
+
+.challenge-instructions header p,
+.challenge-instructions section p,
+.challenge-instructions li {
+  color: var(--muted);
+  line-height: 1.65;
+}
+
+.challenge-instructions section {
+  margin-top: 28px;
+  padding-top: 22px;
+  border-top: 1px solid var(--border);
+}
+
+.challenge-instructions h2 {
+  margin: 0 0 10px;
+  font-size: 17px;
+}
+
+.challenge-task {
+  border-left: 3px solid var(--success);
+  padding-left: 16px;
+}
+
+.challenge-task small {
+  display: block;
+  margin-top: 12px;
+  color: var(--warn);
+  line-height: 1.5;
+}
+
+.challenge-code-panel {
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: 42px minmax(240px, 1fr) auto minmax(130px, 34%) 46px;
+  background: #14161a;
+}
+
+.light .challenge-code-panel {
+  background: #ffffff;
+}
+
+.challenge-code-header,
+.challenge-actions,
+.result-heading,
+.challenge-navigation {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.challenge-code-header {
+  padding: 0 10px 0 14px;
+  border-bottom: 1px solid var(--border);
+  background: var(--panel-strong);
+}
+
+.challenge-code-header > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+.challenge-code-input {
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  resize: none;
+  border: 0;
+  outline: 0;
+  padding: 16px;
+  background: transparent;
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 14px;
+  line-height: 1.6;
+  tab-size: 4;
+  white-space: pre;
+}
+
+.challenge-actions {
+  justify-content: flex-start;
+  padding: 9px 12px;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  background: var(--panel);
+}
+
+.challenge-results {
+  min-height: 0;
+  overflow: auto;
+  padding: 12px 14px;
+  color: #f8fafc;
+  background: var(--terminal);
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+.result-heading {
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #343842;
+}
+
+.result-heading span,
+.challenge-results .info {
+  color: #bfdbfe;
+}
+
+.challenge-results p {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 6px 0;
+  white-space: pre-wrap;
+}
+
+.challenge-results .success {
+  color: #bbf7d0;
+}
+
+.challenge-results .error {
+  color: #fecaca;
+}
+
+.challenge-navigation {
+  padding: 6px 10px;
+  border-top: 1px solid var(--border);
+  background: var(--panel);
+}
+
+.projects-header {
+  max-width: none;
+}
+
+.project-requirements,
+.capstone-band {
+  width: min(1180px, calc(100% - 44px));
+  margin: 22px auto;
+}
+
+.project-requirements {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.project-band {
+  min-width: 0;
+  padding: 18px;
+}
+
+.project-band-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.project-band-heading > svg {
+  color: var(--success);
+}
+
+.project-band-heading h2 {
+  margin: 3px 0 0;
+  font-size: 18px;
+}
+
+.capstone-band {
+  margin-bottom: 48px;
+  overflow: hidden;
+}
+
+.capstone-band > div:first-child {
+  padding: 18px;
+  border-bottom: 1px solid var(--border);
+}
+
+.capstone-band h2 {
+  margin: 4px 0 0;
+  font-size: 22px;
+}
+
+.capstone-row {
+  grid-template-columns: 20px minmax(0, 1fr) 18px;
+}
+
+.track-explorer-row > span {
+  width: 20px;
+  color: var(--success);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.explorer-lesson-row {
+  grid-template-columns: 16px minmax(0, 1fr);
+  align-items: center;
+}
+
+.explorer-lesson-row > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .empty-page {
   min-height: 380px;
   display: grid;
@@ -911,6 +1534,39 @@ kbd {
   .editor-tools {
     border-top: 1px solid var(--border);
   }
+
+  .curriculum-header,
+  .course-layout,
+  .challenge-workspace {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .curriculum-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .course-layout {
+    display: grid;
+  }
+
+  .challenge-page {
+    overflow: auto;
+  }
+
+  .challenge-workspace {
+    min-height: auto;
+  }
+
+  .challenge-instructions {
+    max-height: none;
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .challenge-code-panel {
+    min-height: 760px;
+  }
 }
 
 @media (max-width: 720px) {
@@ -942,7 +1598,7 @@ kbd {
   }
 
   .lesson-hero h1 {
-    font-size: 36px;
+    font-size: 34px;
   }
 
   .code-editor {
@@ -951,5 +1607,57 @@ kbd {
 
   .gutter {
     font-size: 12px;
+  }
+
+  .curriculum-header,
+  .course-header,
+  .projects-header {
+    padding: 24px 18px;
+  }
+
+  .curriculum-header h1,
+  .course-header h1,
+  .projects-header h1 {
+    font-size: 32px;
+  }
+
+  .curriculum-summary {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+    padding: 14px 18px;
+  }
+
+  .curriculum-summary .text-command {
+    margin-left: 0;
+  }
+
+  .track-list,
+  .course-layout,
+  .project-requirements,
+  .capstone-band {
+    width: calc(100% - 20px);
+  }
+
+  .track-row {
+    grid-template-columns: 48px minmax(0, 1fr);
+    gap: 12px;
+    padding: 16px;
+  }
+
+  .track-open {
+    grid-column: 1 / -1;
+  }
+
+  .project-requirements {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .challenge-instructions {
+    padding: 22px 18px 40px;
+  }
+
+  .challenge-instructions h1 {
+    font-size: 29px;
   }
 }

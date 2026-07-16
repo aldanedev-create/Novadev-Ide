@@ -49,7 +49,7 @@ from .ast_nodes import (
     WhileNode,
     WorkflowNode,
 )
-from .nova_modules import nova_root
+from .standard_library import nova_root
 from .parser import parse_source
 
 

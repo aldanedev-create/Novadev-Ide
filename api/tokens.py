@@ -1,35 +1,16 @@
-import json
-import os
-import sys
+from __future__ import annotations
+
 from http.server import BaseHTTPRequestHandler
 
-sys.path.append(os.path.dirname(__file__))
-from novadev_engine import tokenize
+from ._common import get_code, handle_options, inspect_tokens, send_error, send_json
 
 
 class handler(BaseHTTPRequestHandler):
     def do_OPTIONS(self):
-        self.send_json({"ok": True})
+        handle_options(self)
 
     def do_POST(self):
         try:
-            body = self.read_json()
-            self.send_json({"ok": True, "tokens": tokenize(body.get("code", ""))})
-        except Exception as error:
-            self.send_json({"ok": False, "error": f"error: {error}"}, 400)
-
-    def read_json(self):
-        length = int(self.headers.get("content-length", "0") or "0")
-        raw = self.rfile.read(length).decode("utf-8") if length else "{}"
-        return json.loads(raw or "{}")
-
-    def send_json(self, payload, status=200):
-        data = json.dumps(payload).encode("utf-8")
-        self.send_response(status)
-        self.send_header("Content-Type", "application/json")
-        self.send_header("Access-Control-Allow-Origin", "*")
-        self.send_header("Access-Control-Allow-Methods", "POST, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type")
-        self.send_header("Content-Length", str(len(data)))
-        self.end_headers()
-        self.wfile.write(data)
+            send_json(self, {"ok": True, "tokens": inspect_tokens(get_code(self))})
+        except Exception as exc:  # noqa: BLE001
+            send_error(self, exc)

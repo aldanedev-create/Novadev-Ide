@@ -1,0 +1,54 @@
+# Build from the project root:
+#   python nova.py build novadev/examples/alchicken_app.nova
+
+app ALChickenStore {
+    stack JQueryFlask
+    database sqlite
+
+    table Product {
+        id auto
+        name text
+        description text
+        price money
+        stock number
+    }
+
+    table CartItem {
+        id auto
+        productId number
+        name text
+        price money
+        quantity number
+    }
+
+    table Order {
+        id auto
+        customerName text
+        email email
+        address text
+        total money
+    }
+
+    page Storefront {
+        title "ALChicken Store"
+        catalog Product {
+            fields name description price stock
+            actions add_to_cart
+        }
+    }
+
+    page Cart {
+        title "Cart"
+        cart CartItem {
+            fields name price quantity
+        }
+    }
+
+    page Checkout {
+        title "Checkout"
+        checkout Order {
+            fields customerName email address
+            submit "Place Order"
+        }
+    }
+}

@@ -10,4 +10,4 @@ class handler(BaseHTTPRequestHandler):
         handle_options(self)
 
     def do_GET(self):
-        send_json(self, {"ok": True, "service": "novadev-online-ide", "version": "1.0.0"})
+        send_json(self, {"ok": True, "service": "novadev-online-ide", "version": "1.1.0"})

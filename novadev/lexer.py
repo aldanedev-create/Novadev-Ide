@@ -40,6 +40,11 @@ KEYWORDS = {
     "as",
     "default",
     "plugin",
+    "package",
+    "provider",
+    "version",
+    "target",
+    "requires",
     "workflow",
     "input",
     "creates",
@@ -101,6 +106,8 @@ KEYWORDS = {
     "for",
     "in",
     "function",
+    "async",
+    "await",
     "class",
     "try",
     "catch",
@@ -114,6 +121,8 @@ KEYWORDS = {
     "file",
     "template",
     "resources",
+    "features",
+    "feature",
     "assets",
     "ignore",
     "language",
@@ -123,6 +132,23 @@ KEYWORDS = {
     "stack",
     "database",
     "layout",
+    "seed",
+    "job",
+    "test",
+    "expect",
+    "on",
+    "updates",
+    "schedule",
+    "run",
+    "every",
+    "at",
+    "asset",
+    "relationship",
+    "belongs",
+    "hasmany",
+    "permission",
+    "api",
+    "env",
     "component",
     "repeat",
     "generator",
@@ -166,6 +192,14 @@ ONE_CHAR_TOKENS = {
     ".": "DOT",
     ":": "COLON",
     ";": "SEMICOLON",
+    "!": "BANG",
+    "%": "PERCENT",
+    "?": "QUESTION",
+    "@": "AT_SIGN",
+    "|": "PIPE",
+    "&": "AMPERSAND",
+    "^": "CARET",
+    "~": "TILDE",
 }
 
 
@@ -190,10 +224,10 @@ class Lexer:
                 self.skip_comment()
             elif char == "/" and self.peek_next() == "/":
                 self.skip_comment()
-            elif char == '"' and self.peek_next() == '"' and self.peek_at(2) == '"':
-                self.triple_string()
-            elif char == '"':
-                self.string()
+            elif char in {'"', "'"} and self.peek_next() == char and self.peek_at(2) == char:
+                self.triple_string(char)
+            elif char in {'"', "'"}:
+                self.string(char)
             elif char.isdigit():
                 self.number()
             elif self.is_identifier_start(char):
@@ -241,13 +275,13 @@ class Lexer:
         while not self.at_end() and self.peek() != "\n":
             self.advance()
 
-    def string(self) -> None:
+    def string(self, delimiter: str) -> None:
         start_line = self.line
         start_column = self.column
         self.advance()
         value = ""
 
-        while not self.at_end() and self.peek() != '"':
+        while not self.at_end() and self.peek() != delimiter:
             char = self.advance()
             if char == "\\":
                 value += self.escape_sequence()
@@ -262,7 +296,7 @@ class Lexer:
         self.advance()
         self.add("STRING", value, start_line, start_column)
 
-    def triple_string(self) -> None:
+    def triple_string(self, delimiter: str) -> None:
         start_line = self.line
         start_column = self.column
         self.advance()
@@ -271,7 +305,7 @@ class Lexer:
         value = ""
 
         while not self.at_end():
-            if self.peek() == '"' and self.peek_next() == '"' and self.peek_at(2) == '"':
+            if self.peek() == delimiter and self.peek_next() == delimiter and self.peek_at(2) == delimiter:
                 self.advance()
                 self.advance()
                 self.advance()
@@ -290,7 +324,7 @@ class Lexer:
         if self.at_end():
             return "\\"
         char = self.advance()
-        escapes = {"n": "\n", "t": "\t", '"': '"', "\\": "\\"}
+        escapes = {"n": "\n", "t": "\t", '"': '"', "'": "'", "\\": "\\"}
         return escapes.get(char, char)
 
     def number(self) -> None:

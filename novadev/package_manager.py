@@ -306,15 +306,52 @@ class NovaPackageManager:
     def write_launchers(self) -> List[Path]:
         self.bin_dir.mkdir(parents=True, exist_ok=True)
         python = sys.executable
+        pythonw = str(Path(python).with_name("pythonw.exe"))
         nova_py = self.language_dir / "nova.py"
         shell_py = self.language_dir / "shell.py"
         novapm_py = self.language_dir / "novapm.py"
         manager_py = self.language_dir / "novadev_manager.py"
+        manager_cmd = (
+            f'@echo off\r\n'
+            f'setlocal EnableExtensions\r\n'
+            f'set "NOVADEV_HOME={self.home}"\r\n'
+            f'set "NOVADEV_MANAGER={manager_py}"\r\n'
+            f'set "NOVADEV_LOG_DIR=%NOVADEV_HOME%\\logs"\r\n'
+            f'set "NOVADEV_LOG=%NOVADEV_LOG_DIR%\\manager.log"\r\n'
+            f'if not exist "%NOVADEV_LOG_DIR%" mkdir "%NOVADEV_LOG_DIR%" >nul 2>nul\r\n'
+            f'echo ==== NovaDev Manager %DATE% %TIME% ==== > "%NOVADEV_LOG%"\r\n'
+            f'echo Home: %NOVADEV_HOME% >> "%NOVADEV_LOG%"\r\n'
+            f'echo Manager: %NOVADEV_MANAGER% >> "%NOVADEV_LOG%"\r\n'
+            f'echo Python: {python} >> "%NOVADEV_LOG%"\r\n'
+            f'if not exist "%NOVADEV_MANAGER%" (\r\n'
+            f'    echo Missing manager file: %NOVADEV_MANAGER% >> "%NOVADEV_LOG%"\r\n'
+            f'    exit /b 10\r\n'
+            f')\r\n'
+            f'"{python}" "%NOVADEV_MANAGER%" %* >> "%NOVADEV_LOG%" 2>&1\r\n'
+            f'set "EXIT_CODE=%errorlevel%"\r\n'
+            f'echo NovaDev Manager exited with %EXIT_CODE%. >> "%NOVADEV_LOG%"\r\n'
+            f'exit /b %EXIT_CODE%\r\n'
+        )
+        manager_vbs = (
+            'Set shell = CreateObject("WScript.Shell")\r\n'
+            'Set filesystem = CreateObject("Scripting.FileSystemObject")\r\n'
+            'scriptDir = filesystem.GetParentFolderName(WScript.ScriptFullName)\r\n'
+            'homeDir = filesystem.GetParentFolderName(scriptDir)\r\n'
+            'logPath = homeDir & "\\logs\\manager.log"\r\n'
+            'managerCommand = """" & scriptDir & "\\novadev-manager.cmd" & """"\r\n'
+            'exitCode = shell.Run(managerCommand, 0, True)\r\n'
+            'If exitCode <> 0 Then\r\n'
+            '    MsgBox "NovaDev Manager could not start." & vbCrLf & vbCrLf & _\r\n'
+            '        "Details were written to:" & vbCrLf & logPath, _\r\n'
+            '        vbExclamation, "NovaDev Manager"\r\n'
+            'End If\r\n'
+        )
         launchers = {
             "nova.cmd": f'@echo off\r\nset "NOVADEV_HOME={self.home}"\r\n"{python}" "{nova_py}" %*\r\n',
             "nova-shell.cmd": f'@echo off\r\nset "NOVADEV_HOME={self.home}"\r\n"{python}" "{shell_py}" %*\r\n',
             "novapm.cmd": f'@echo off\r\nset "NOVADEV_HOME={self.home}"\r\n"{python}" "{novapm_py}" %*\r\n',
-            "novadev-manager.cmd": f'@echo off\r\nset "NOVADEV_HOME={self.home}"\r\n"{python}" "{manager_py}" %*\r\n',
+            "novadev-manager.cmd": manager_cmd,
+            "novadev-manager.vbs": manager_vbs,
             "nova": f'#!/usr/bin/env sh\nexport NOVADEV_HOME="{self.home}"\nexec "{python}" "{nova_py}" "$@"\n',
             "nova-shell": f'#!/usr/bin/env sh\nexport NOVADEV_HOME="{self.home}"\nexec "{python}" "{shell_py}" "$@"\n',
             "novapm": f'#!/usr/bin/env sh\nexport NOVADEV_HOME="{self.home}"\nexec "{python}" "{novapm_py}" "$@"\n',

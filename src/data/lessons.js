@@ -17,10 +17,10 @@ export const lessons = [
 
 app FirstProject {
     project {
-        frontend Vue
-        backend Flask
+        frontend VueVite
+        backend Express
         database SQLite
-        structure VueFlask
+        structure VueExpress
         styling Tailwind
         mode custom
     }
@@ -317,12 +317,12 @@ use "./routes/products.nova"
 
 app AppleStore {
     project {
-        frontend Vue
-        backend Flask
+        frontend VueVite
+        backend Express
         database SQLite
-        structure VueFlask
+        structure VueExpress
         styling Tailwind
-        mode ecommerce
+        mode custom
     }
 }`,
     exercise: "Plan a folder structure for a project with models, pages, routes, workflows, and styles.",
@@ -335,7 +335,7 @@ app AppleStore {
     level: "Beginner",
     title: "App and Project Blocks",
     summary: "Describe the full-stack architecture NovaDev should generate.",
-    concepts: ["app", "project", "Vue", "Flask", "SQLite", "Tailwind"],
+    concepts: ["app", "project", "Vue", "Express", "SQLite", "Tailwind"],
     outcomes: [
       "Declare an app name.",
       "Choose frontend, backend, database, structure, styling, and mode.",
@@ -345,10 +345,10 @@ app AppleStore {
       "The app block is where NovaDev becomes more than a scripting language. It tells NovaDev what kind of software project to produce.",
     code: `app ClientPortal {
     project {
-        frontend Vue
-        backend Flask
+        frontend VueVite
+        backend Express
         database SQLite
-        structure VueFlask
+        structure VueExpress
         styling Tailwind
         mode custom
 
@@ -369,18 +369,18 @@ app AppleStore {
     level: "Beginner",
     title: "Modes: Custom and Domain Defaults",
     summary: "Choose whether NovaDev should use a domain generator or only your declarations.",
-    concepts: ["mode custom", "mode ecommerce", "mode construction", "domain generators"],
+    concepts: ["mode custom", "mode custom", "mode construction", "domain generators"],
     outcomes: [
       "Use mode custom when the app does not fit a preset category.",
       "Use domain modes when helpful defaults are wanted.",
       "Avoid unrelated generated code by choosing the right mode.",
     ],
     explanation:
-      "Mode controls assumptions. mode ecommerce can add store defaults. mode construction can add construction defaults. mode custom should only generate what the developer explicitly declares.",
+      "Mode controls assumptions. mode custom can add store defaults. mode construction can add construction defaults. mode custom should only generate what the developer explicitly declares.",
     code: `app ChurchMediaSystem {
     project {
-        frontend Vue
-        backend Flask
+        frontend VueVite
+        backend Express
         database SQLite
         styling Tailwind
         mode custom
@@ -390,7 +390,7 @@ app AppleStore {
         title "Church Media"
     }
 }`,
-    exercise: "Write one app using mode custom and one using mode ecommerce. Compare what should be generated.",
+    exercise: "Write one app using mode custom and one using mode custom. Compare what should be generated.",
     projectUse:
       "Use modes to make NovaDev project-specific instead of producing the same generic code for every app.",
   },
@@ -407,7 +407,7 @@ app AppleStore {
       "Connect tables to pages and generated backend models.",
     ],
     explanation:
-      "Tables describe the app's data. In generated Flask projects, these declarations can become SQLite and SQLAlchemy models.",
+      "Tables describe the app's data. In generated Express projects, these declarations can become SQLite and Prisma models.",
     code: `table Product {
     id auto
     name text
@@ -470,7 +470,7 @@ table Order {
       "Plan route names around real project workflows.",
     ],
     explanation:
-      "Routes are how frontend code talks to backend code. In a Flask project, NovaDev route declarations can generate starter route files.",
+      "Routes are how frontend code talks to backend code. In a Express project, NovaDev route declarations can generate starter route files.",
     code: `route GET "/api/products" {
     return "products"
 }
@@ -526,42 +526,54 @@ workflow RestockAlert {
     ],
     explanation:
       "Real apps often need different users: customers, admins, staff, drivers, teachers, students, or managers. NovaDev auth declarations should guide generated route guards and UI navigation.",
-    code: `auth {
-    role Admin
-    role Customer
-    role Staff
-}
+    code: `app StaffPortal {
+    project {
+        frontend VueVite
+        backend Express
+        database SQLite
+        structure VueExpress
+        styling Tailwind
+        mode custom
+    }
 
-page AdminDashboard {
-    title "Admin Dashboard"
-    require role Admin
+    auth Account
+
+    page AdminDashboard {
+        title "Admin Dashboard"
+        require auth
+    }
+
+    route GET "/api/admin/reports" {
+        require auth
+        return "reports"
+    }
 }`,
-    exercise: "Add roles for Driver and Manager, then protect a Reports page.",
+    exercise: "Add an Account role field and document which route should require an administrator role in the generated Express app.",
     projectUse:
       "Use roles in stores, CRMs, schools, booking apps, delivery systems, and internal dashboards.",
   },
   {
-    id: "sqlite-sqlalchemy",
+    id: "sqlite-prisma",
     section: "Backend",
     level: "Intermediate",
-    title: "SQLite and SQLAlchemy",
-    summary: "Understand how NovaDev table declarations map to real Flask database code.",
-    concepts: ["SQLite", "SQLAlchemy", "models", "database"],
+    title: "SQLite and Prisma",
+    summary: "Understand how NovaDev table declarations map to real Express database code.",
+    concepts: ["SQLite", "Prisma", "models", "database"],
     outcomes: [
       "Connect table declarations to generated backend models.",
       "Understand SQLite as the starter database.",
-      "Understand SQLAlchemy as the Python model layer.",
+      "Understand Prisma as the Node/Express model client.",
     ],
     explanation:
-      "NovaDev can use SQLite for local app data and SQLAlchemy for Python model classes. The .nova file describes the table; generated backend code turns it into working database code.",
+      "NovaDev can use SQLite for local app data and Prisma as the Node/Express model client. The .nova file describes the table; generated backend code turns it into working database code.",
     code: `app InventoryApp {
     project {
-        frontend Vue
-        backend Flask
+        frontend VueVite
+        backend Express
         database SQLite
-        structure VueFlask
+        structure VueExpress
         styling Tailwind
-        mode inventory
+        mode custom
     }
 
     table Item {
@@ -573,7 +585,7 @@ page AdminDashboard {
 }`,
     exercise: "Add Supplier and PurchaseOrder tables for an inventory project.",
     projectUse:
-      "Use SQLite and SQLAlchemy generation for dashboards, admin panels, inventory tools, store backends, school systems, and CRUD-heavy apps.",
+      "Use SQLite and Prisma generation for dashboards, admin panels, inventory tools, store backends, school systems, and CRUD-heavy apps.",
   },
   {
     id: "vue-tailwind",
@@ -591,12 +603,12 @@ page AdminDashboard {
       "Tailwind helps generated projects look different without one shared CSS file making every project feel the same. The domain, mode, theme, pages, and declared components should shape the final UI.",
     code: `app SalonBooking {
     project {
-        frontend Vue
-        backend Flask
+        frontend VueVite
+        backend Express
         database SQLite
-        structure VueFlask
+        structure VueExpress
         styling Tailwind
-        mode booking
+        mode custom
     }
 
     theme CleanStudio {
@@ -625,11 +637,11 @@ page AdminDashboard {
       "Generated defaults are helpful, but real projects need custom code. NovaDev can wrap custom frontend code so developers control exact behavior and style.",
     code: `app PortfolioCMS {
     project {
-        frontend Vue
-        backend Flask
+        frontend VueVite
+        backend Express
         database SQLite
         styling Tailwind
-        mode cms
+        mode custom
     }
 
     custom frontend "styles/brand.css" """
@@ -651,32 +663,31 @@ page AdminDashboard {
     id: "custom-backend",
     section: "Backend",
     level: "Advanced",
-    title: "Custom Backend Python",
-    summary: "Wrap Python backend modules inside NovaDev for real app logic.",
-    concepts: ["custom backend", "Python modules", "Flask services", "business logic"],
+    title: "Custom Backend Boundaries",
+    summary: "Understand which custom code belongs in the generated Express project and which Python bridges are not current output.",
+    concepts: ["custom code", "Express services", "browser/server boundary", "business logic"],
     outcomes: [
-      "Add backend service files from .nova source.",
+      "Add project-specific custom code without leaking secrets.",
       "Keep business logic specific to the project.",
-      "Use Python's ecosystem without hiding the generated code.",
+      "Recognize the current boundary between NovaDev, Vue, and Express.",
     ],
     explanation:
-      "NovaDev should not guess every business rule. For real apps, developers can declare tables and pages, then add custom backend Python modules for the project-specific parts.",
+      "NovaDev should not guess every business rule. The current live generator produces a Vue/Vite + Express project, so custom backend behavior must remain an explicit JavaScript/Node boundary. A Python bridge is a separate future design, not an automatic import path.",
     code: `app SupportDesk {
     project {
-        frontend Vue
-        backend Flask
+        frontend VueVite
+        backend Express
         database SQLite
         styling Tailwind
-        mode supportdesk
+        mode custom
     }
 
-    custom backend "services/ticket_priority.py" """
-def priority_for(message):
-    text = message.lower()
-    if "urgent" in text or "down" in text:
-        return "high"
-    return "normal"
-"""
+    custom js ticket_helpers {
+    export function priorityFor(message) {
+        const text = String(message || "").toLowerCase()
+        return text.includes("urgent") || text.includes("down") ? "high" : "normal"
+    }
+}
 
     table Ticket {
         id auto
@@ -685,9 +696,9 @@ def priority_for(message):
         priority text
     }
 }`,
-    exercise: "Create a custom backend module for calculating invoice totals.",
+    exercise: "Create a custom JavaScript helper for calculating invoice totals and keep it independent from browser-only code.",
     projectUse:
-      "Use backend modules for payments, AI calls, scoring, document processing, notifications, reports, and custom integrations.",
+      "Use backend modules for validation, pricing, notifications, reports, and custom integrations; document any Python bridge separately.",
   },
   {
     id: "api-keys",
@@ -698,29 +709,27 @@ def priority_for(message):
     concepts: ["API keys", "environment variables", "secrets", "backend integrations"],
     outcomes: [
       "Understand why API keys should not be hardcoded into frontend files.",
-      "Read secrets from environment variables in backend Python.",
-      "Plan API integrations safely in generated Flask apps.",
+      "Read secrets from environment variables without printing them.",
+      "Plan API integrations safely in generated Express apps.",
     ],
     explanation:
       "API keys are secrets. Put them in environment variables such as OPENAI_API_KEY, STRIPE_SECRET_KEY, or RESEND_API_KEY. The frontend should call your backend route; the backend reads the key and talks to the third-party service.",
     code: `app AiAssistant {
     project {
-        frontend Vue
-        backend Flask
+        frontend VueVite
+        backend Express
         database SQLite
         styling Tailwind
         mode custom
     }
 
-    custom backend "services/ai_client.py" """
-import os
-
-def get_api_key():
-    key = os.environ.get("OPENAI_API_KEY")
-    if not key:
-        raise RuntimeError("OPENAI_API_KEY is missing")
-    return key
-"""
+    custom js ai_client {
+    export function requireApiKey(environment) {
+        const key = environment?.OPENAI_API_KEY
+        if (!key) throw new Error("OPENAI_API_KEY is missing")
+        return key
+    }
+}
 
     route POST "/api/ai/message" {
         return "AI message route"
@@ -746,21 +755,18 @@ def get_api_key():
       "The safe pattern is frontend to your backend, then backend to the external API. This protects secrets and gives your app one place to validate input and handle errors.",
     code: `app WeatherPlanner {
     project {
-        frontend Vue
-        backend Flask
+        frontend VueVite
+        backend Express
         database SQLite
         styling Tailwind
         mode custom
     }
 
-    custom backend "services/weather.py" """
-import os
-import urllib.request
-
-def weather_url(city):
-    key = os.environ.get("WEATHER_API_KEY")
-    return f"https://api.example.com/weather?city={city}&key={key}"
-"""
+    custom js weather_client {
+    export function weatherPath(city) {
+        return "/api/weather?city=" + encodeURIComponent(city)
+    }
+}
 
     route GET "/api/weather" {
         return "weather"
@@ -789,11 +795,11 @@ use package "dashboard-kit"
 
 app AdminPanel {
     project {
-        frontend Vue
-        backend Flask
+        frontend VueVite
+        backend Express
         database SQLite
         styling Tailwind
-        mode dashboard
+        mode custom
     }
 
     page Dashboard {
@@ -820,8 +826,8 @@ app AdminPanel {
       "NovaDev should generate code from the project context. A church app should not get cart code unless the developer declared it. A construction site should not get school attendance logic. mode custom is the strictest version: only declared behavior.",
     code: `app ChurchMediaSystem {
     project {
-        frontend Vue
-        backend Flask
+        frontend VueVite
+        backend Express
         database SQLite
         styling Tailwind
         mode custom
@@ -890,7 +896,7 @@ if actual == expected {
     level: "Intermediate",
     title: "Deployment Thinking",
     summary: "Understand what changes when a NovaDev app moves from local development to the internet.",
-    concepts: ["deployment", "environment variables", "Vercel", "Flask hosting", "build output"],
+    concepts: ["deployment", "environment variables", "Vercel", "Express hosting", "build output"],
     outcomes: [
       "Separate local development from deployment.",
       "Know where frontend, backend, database, and secrets fit.",
@@ -900,10 +906,10 @@ if actual == expected {
       "Deployment is not just uploading files. The frontend build, backend server, environment variables, database location, package downloads, and installer zip must all match the version you want users to receive.",
     code: `app DeployReadyApp {
     project {
-        frontend Vue
-        backend Flask
+        frontend VueVite
+        backend Express
         database SQLite
-        structure VueFlask
+        structure VueExpress
         styling Tailwind
         mode custom
 
@@ -920,14 +926,14 @@ if actual == expected {
 }`,
     exercise: "Write a deployment checklist for a NovaDev app with one API key and one database.",
     projectUse:
-      "Use deployment thinking for Vercel sites, Flask backends, package-manager downloads, Windows installers, and client demos.",
+      "Use deployment thinking for Vercel sites, Express backends, package-manager downloads, Windows installers, and client demos.",
   },
   {
     id: "capstone-store",
     section: "Capstone Projects",
     level: "Advanced",
     title: "Capstone: E-commerce Store",
-    summary: "Combine app mode, tables, pages, workflows, routes, Vue, Flask, SQLite, and custom code.",
+    summary: "Combine app mode, tables, pages, workflows, routes, Vue, Express, SQLite, and custom code.",
     concepts: ["ecommerce", "tables", "checkout", "routes", "custom backend"],
     outcomes: [
       "Build a larger NovaDev app from multiple concepts.",
@@ -938,12 +944,12 @@ if actual == expected {
       "A real store needs products, customers, orders, checkout workflows, pages, routes, and sometimes custom payment code. NovaDev should use the declarations to generate the right app shape.",
     code: `app AppleMarket {
     project {
-        frontend Vue
-        backend Flask
+        frontend VueVite
+        backend Express
         database SQLite
-        structure VueFlask
+        structure VueExpress
         styling Tailwind
-        mode ecommerce
+        mode custom
     }
 
     table Product {
@@ -1000,8 +1006,8 @@ if actual == expected {
       "Custom systems are where NovaDev must act most like a real compiler. The developer writes the source of truth, and NovaDev generates only what was declared.",
     code: `app TradingJournal {
     project {
-        frontend Vue
-        backend Flask
+        frontend VueVite
+        backend Express
         database SQLite
         styling Tailwind
         mode custom
@@ -1052,7 +1058,7 @@ def risk_reward(entry, stop, target):
       "Know when classes are better than loose variables.",
     ],
     explanation:
-      "Object-oriented programming helps organize larger applications. A class is a blueprint. An object is a live value created from that blueprint. NovaDev can teach and describe OOP concepts even when generated backend code maps them into Python classes, SQLAlchemy models, or service objects.",
+      "Object-oriented programming helps organize larger applications. A class is a blueprint. An object is a live value created from that blueprint. NovaDev can teach and describe OOP concepts even when generated backend code maps them into Python classes, Prisma models, or service objects.",
     code: `class Product {
     constructor(name, price) {
         this.name = name
@@ -1101,37 +1107,43 @@ let role = "Admin"
 print("{role} can manage users")`,
     exercise: "Model a Booking that has a Customer and a Service without using inheritance.",
     projectUse:
-      "Use OOP design when generated Flask services, SQLAlchemy models, or custom backend modules need clear responsibilities.",
+      "Use OOP design when generated Express services, Prisma models, or custom backend modules need clear responsibilities.",
   },
   {
     id: "automations",
     section: "Automation",
     level: "Intermediate",
     title: "Automations",
-    summary: "Describe scheduled or triggered work such as reminders, reports, and cleanup tasks.",
-    concepts: ["automation", "schedule", "task", "workflow", "cron-style jobs"],
+    summary: "Describe current job declarations and manual API runs while keeping scheduler ideas clearly labelled future work.",
+    concepts: ["job", "manual run", "workflow", "idempotency", "scheduler boundary"],
     outcomes: [
-      "Understand automations as background work.",
-      "Describe recurring tasks in NovaDev source.",
-      "Connect automations to workflows, routes, and backend modules.",
+      "Declare a job that the current Express generator can list.",
+      "Exercise GET /api/jobs and POST /api/jobs/:name/run.",
+      "Design retries and schedules without claiming an unshipped scheduler.",
     ],
     explanation:
-      "Automations are for work that should happen without a user clicking a button. Examples include sending daily reports, cleaning expired sessions, checking inventory, sending appointment reminders, or syncing external APIs.",
-    code: `automation DailySalesReport {
-    schedule every day at "08:00"
-    task GenerateReport
-    notify Admin
-}
+      "The current live Express output provides a declared job catalog and a manual in-process run response. It does not generate the retired Python jobs.py scheduler or a NOVA_RUN_JOBS loop. A real scheduler needs durable state, retries, idempotency, observability, and deployment decisions.",
+    code: `app Operations {
+    project {
+        frontend VueVite
+        backend Express
+        database SQLite
+        structure VueExpress
+        styling Tailwind
+        mode custom
+    }
 
-workflow GenerateReport {
-    creates Report
-    notify Manager
-}
+    job InventoryAlert {
+        workflow CheckInventory
+    }
 
-print("Daily automation declared")`,
-    exercise: "Create an automation that sends a booking reminder every day at 09:00.",
+    workflow CheckInventory {
+        validates quantity
+    }
+}`,
+    exercise: "Write a job design for a daily inventory alert. Mark catalog, manual run, durable scheduling, retry, and notification as separate concerns.",
     projectUse:
-      "Use automations for reports, reminders, billing checks, inventory alerts, email queues, data imports, and scheduled cleanup.",
+      "Use current jobs for explicit manual triggers and future-proof designs for reports, reminders, billing checks, inventory alerts, imports, and cleanup.",
   },
   {
     id: "nova-math",
@@ -1260,19 +1272,19 @@ print("Cleanup automation declared")`,
     section: "Files and Storage",
     level: "Intermediate",
     title: "Nova SQLite",
-    summary: "Use SQLite for local database-backed apps and generated Flask projects.",
-    concepts: ["SQLite", "database", "CRUD", "queries", "SQLAlchemy"],
+    summary: "Use SQLite for local database-backed apps and generated Express projects.",
+    concepts: ["SQLite", "database", "CRUD", "queries", "Prisma"],
     outcomes: [
       "Understand SQLite as a file-based database.",
       "Connect table declarations to generated models.",
       "Use backend routes for create, read, update, and delete behavior.",
     ],
     explanation:
-      "SQLite stores data in a local database file. NovaDev table declarations describe the data, while generated Flask and SQLAlchemy code can create models and routes that read and write records.",
+      "SQLite stores data in a local database file. NovaDev table declarations describe the data, while generated Express and Prisma code can create models and routes that read and write records.",
     code: `app LibraryManager {
     project {
-        frontend Vue
-        backend Flask
+        frontend VueVite
+        backend Express
         database SQLite
         styling Tailwind
         mode custom
@@ -1291,7 +1303,7 @@ print("Cleanup automation declared")`,
 }`,
     exercise: "Add POST, PUT, and DELETE routes for Book records.",
     projectUse:
-      "Use Nova SQLite for admin tools, inventory apps, CRMs, school trackers, booking systems, local dashboards, and prototypes that need real persistence.",
+      "Use Nova SQLite for admin tools, inventory apps, CRMs, school trackers, booking systems, local dashboards, and applications that need persistent local data.",
   },
   {
     id: "nova-json",
@@ -1306,7 +1318,7 @@ print("Cleanup automation declared")`,
       "Use JSON for generated backend/frontend communication.",
     ],
     explanation:
-      "Most modern APIs send JSON. NovaDev objects and lists map naturally to JSON structures. Generated Flask routes can return JSON, and Vue frontends can render that data.",
+      "Most modern APIs send JSON. NovaDev objects and lists map naturally to JSON structures. Generated Express routes can return JSON, and Vue frontends can render that data.",
     code: `let product = {
     name: "Honeycrisp Box",
     price: 29,

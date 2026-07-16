@@ -137,6 +137,7 @@ class AppNode:
     workflows: List["WorkflowNode"] = field(default_factory=list)
     modules: List["ModuleNode"] = field(default_factory=list)
     discoveries: List[str] = field(default_factory=list)
+    settings: Dict[str, Any] = field(default_factory=dict)
 
     def add_member(self, node: Any) -> None:
         self.body.append(node)
@@ -176,6 +177,7 @@ class AppNode:
             if node.name == "unsafe_python":
                 self.unsafe_python = bool(node.props.get("value"))
         elif isinstance(node, ComponentNode) and node.kind == "project_settings":
+            self.settings.update(node.props)
             self.frontend = node.props.get("frontend", self.frontend)
             self.backend = node.props.get("backend", self.backend)
             self.database = node.props.get("database", self.database)

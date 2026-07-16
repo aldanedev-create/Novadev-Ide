@@ -1,9 +1,12 @@
 from __future__ import annotations
 
 import io
+import base64
 import json
+import re
 import signal
 import sys
+import tempfile
 import threading
 from contextlib import contextmanager, redirect_stdout
 from http.server import BaseHTTPRequestHandler
@@ -165,3 +168,67 @@ def run_source(code: str) -> dict[str, Any]:
         "output": trim_text(output.getvalue()),
         "lastValue": json_safe(getattr(runtime, "last_value", None)),
     }
+
+
+def inspect_tokens(code: str) -> list[dict[str, Any]]:
+    from novadev.lexer import tokenize
+
+    return [
+        {
+            "type": token.type,
+            "value": json_safe(token.value),
+            "line": token.line,
+            "column": token.column,
+        }
+        for token in tokenize(code)
+    ]
+
+
+def inspect_ast(code: str) -> dict[str, Any]:
+    from novadev.ast_nodes import node_to_data
+    from novadev.parser import NovaParser
+
+    return node_to_data(NovaParser(code).parse())
+
+
+def module_data_url(source: str) -> str:
+    encoded = base64.b64encode(source.encode("utf-8")).decode("ascii")
+    return "data:text/javascript;base64," + encoded
+
+
+def compose_preview(files: dict[str, str]) -> str:
+    html = files.get("index.html", "")
+    css = files.get("style.css", "")
+    app_source = files.get("app.js", "")
+    if not html or not app_source:
+        return html
+
+    for name, source in sorted(files.items(), key=lambda item: len(item[0]), reverse=True):
+        if not name.endswith(".js") or name == "app.js":
+            continue
+        url = module_data_url(source)
+        for reference in {f"./{name}", name}:
+            app_source = app_source.replace(f"'{reference}'", repr(url)).replace(f'"{reference}"', json.dumps(url))
+
+    html = re.sub(r'<meta\s+http-equiv="Content-Security-Policy"[^>]*>', "", html, flags=re.IGNORECASE)
+    html = re.sub(r'<link[^>]+href="\./style\.css"[^>]*>', "", html, flags=re.IGNORECASE)
+    html = re.sub(r'<script[^>]+src="\./app\.js"[^>]*>\s*</script>', "", html, flags=re.IGNORECASE)
+    payload = f"<style>{css}</style><script type=\"module\">{app_source}</script>"
+    return html.replace("</body>", payload + "</body>")
+
+
+def build_ui_source(code: str) -> dict[str, Any]:
+    from novadev.project_compiler import ProjectCompiler
+
+    with time_limit(TIME_LIMIT_SECONDS), tempfile.TemporaryDirectory(prefix="novadev-online-ui-") as temp:
+        root = Path(temp)
+        entry = root / "app.nova"
+        output = root / "frontend"
+        entry.write_text(code, encoding="utf-8")
+        generated = ProjectCompiler().build_frontend(entry, output)
+        files = {
+            path.relative_to(output).as_posix(): trim_text(path.read_text(encoding="utf-8"))
+            for path in generated
+            if path.is_file() and path.suffix.lower() in {".html", ".css", ".js", ".json", ".svg", ".md"}
+        }
+    return {"files": files, "previewHtml": trim_text(compose_preview(files))}

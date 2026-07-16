@@ -1,92 +1,124 @@
 from __future__ import annotations
 
-"""Mode metadata for NovaDev 1.1 project-specific generation."""
+"""Domain defaults used by the NovaDev project compiler.
+
+This module keeps mode names, page types, and domain hints in one place so the
+compiler can stay general-purpose while still giving useful defaults for common
+app categories.
+"""
 
 from dataclasses import dataclass, field
-from typing import Dict, List
 
 
 @dataclass
 class DomainMode:
     name: str
-    entities: List[str] = field(default_factory=list)
-    workflows: List[str] = field(default_factory=list)
-    pages: List[str] = field(default_factory=list)
-    components: List[str] = field(default_factory=list)
-    description: str = ""
+    description: str
+    default_entities: list[str] = field(default_factory=list)
+    default_pages: list[str] = field(default_factory=list)
+    default_workflows: list[str] = field(default_factory=list)
 
 
-MODES: Dict[str, DomainMode] = {
-    "custom": DomainMode(
-        "custom",
-        description="No domain defaults. NovaDev generates only what the developer declares.",
-    ),
-    "ecommerce": DomainMode(
-        "ecommerce",
-        ["Product", "Customer", "CartItem", "Order", "OrderItem", "Review", "Coupon"],
-        ["AddToCart", "Checkout", "ApplyCoupon", "UpdateStock", "OrderStatus"],
-        ["StoreFront", "ProductDetails", "Cart", "Checkout", "Orders", "AdminDashboard"],
-        ["catalog", "cart", "checkout", "product_grid"],
-        "Online store projects with products, carts, checkout, and orders.",
-    ),
-    "construction": DomainMode(
-        "construction",
-        ["Service", "Project", "Lead", "Estimate", "TeamMember", "Testimonial"],
-        ["LeadCapture", "EstimateRequest", "ProjectStatusUpdate"],
-        ["Home", "Services", "Projects", "Contact", "Quote", "AdminDashboard"],
-        ["hero", "portfolio", "lead_form", "estimator"],
-        "Construction websites and project/lead management apps.",
-    ),
-    "crm": DomainMode(
-        "crm",
-        ["Client", "Contact", "Deal", "Task", "Note", "PipelineStage"],
-        ["CreateLead", "MoveDealStage", "ScheduleFollowUp", "CloseDeal"],
-        ["Dashboard", "Clients", "Deals", "Pipeline", "Tasks"],
-        ["pipeline", "activity_feed", "deal_board"],
-        "Customer relationship and sales pipeline tools.",
-    ),
-    "school": DomainMode(
-        "school",
-        ["Student", "Teacher", "Course", "Grade", "Attendance", "Assignment"],
-        ["EnrollStudent", "RecordGrade", "MarkAttendance"],
-        ["Dashboard", "Students", "Courses", "Grades", "Attendance"],
-        ["gradebook", "attendance_table", "course_list"],
-        "School administration and learning management projects.",
-    ),
-    "portfolio": DomainMode("portfolio", ["Project", "Skill", "Testimonial", "ContactMessage"], ["SubmitContact"], ["Home", "Work", "About", "Contact"]),
-    "restaurant": DomainMode("restaurant", ["MenuItem", "Order", "Reservation", "Customer"], ["PlaceOrder", "BookTable"], ["Home", "Menu", "Reservations", "Orders"]),
-    "booking": DomainMode("booking", ["Service", "Booking", "Customer", "Staff"], ["CreateBooking", "CancelBooking"], ["Services", "Calendar", "Bookings"]),
-    "dashboard": DomainMode("dashboard", ["Metric", "Report", "User"], ["RefreshReport"], ["Dashboard", "Reports"]),
-    "blog": DomainMode("blog", ["Post", "Author", "Category", "Comment"], ["PublishPost"], ["Home", "Posts", "Admin"]),
-    "cms": DomainMode("cms", ["Page", "Block", "Asset", "User"], ["PublishPage"], ["Pages", "Assets", "Admin"]),
-    "church": DomainMode("church", ["Sermon", "PrayerRequest", "Event", "Member", "Donation", "Ministry"], ["SubmitPrayer", "PublishSermon", "RegisterEvent"], ["Home", "Sermons", "Prayer", "Events", "Giving", "Admin"]),
-    "gym": DomainMode("gym", ["Member", "Plan", "Trainer", "Workout", "Invoice", "Attendance"], ["RegisterMember", "BillMember", "CheckIn"], ["Dashboard", "Members", "Billing", "Classes"]),
-    "inventory": DomainMode("inventory", ["Product", "Supplier", "StockMove", "Warehouse"], ["ReceiveStock", "AdjustStock"], ["Dashboard", "Products", "Stock"]),
-    "delivery": DomainMode("delivery", ["Order", "Driver", "Vehicle", "Delivery"], ["AssignDriver", "UpdateDelivery"], ["Dashboard", "Deliveries", "Drivers"]),
-    "realestate": DomainMode("realestate", ["Property", "Agent", "Lead", "Showing"], ["BookShowing", "CaptureLead"], ["Listings", "PropertyDetails", "Leads"]),
-    "healthcare": DomainMode("healthcare", ["Patient", "Appointment", "Provider", "Prescription"], ["ScheduleAppointment"], ["Dashboard", "Patients", "Appointments"]),
-    "finance": DomainMode("finance", ["Account", "Transaction", "Budget", "Report"], ["RecordTransaction"], ["Dashboard", "Accounts", "Reports"]),
-    "trading": DomainMode("trading", ["Trade", "Strategy", "JournalEntry", "Account"], ["RecordTrade"], ["Dashboard", "Trades", "Journal"]),
-    "security": DomainMode("security", ["Scan", "Finding", "Target", "Report", "User"], ["RunScan", "GenerateReport"], ["Dashboard", "Targets", "Scans", "Findings", "Reports"]),
-    "nonprofit": DomainMode("nonprofit", ["Donor", "Campaign", "Donation", "Volunteer"], ["RecordDonation"], ["Home", "Campaigns", "Donors"]),
-    "event": DomainMode("event", ["Event", "Ticket", "Attendee", "Venue"], ["RegisterAttendee"], ["Events", "Tickets", "Attendees"]),
-    "hotel": DomainMode("hotel", ["Room", "Guest", "Reservation", "Invoice"], ["BookRoom", "CheckIn"], ["Rooms", "Reservations", "Guests"]),
-    "salon": DomainMode("salon", ["Service", "Appointment", "Client", "Stylist"], ["BookAppointment"], ["Services", "Calendar", "Clients"]),
-    "learning": DomainMode("learning", ["Course", "Lesson", "Student", "Progress"], ["EnrollStudent"], ["Courses", "Lessons", "Progress"]),
-    "marketplace": DomainMode("marketplace", ["Listing", "Seller", "Buyer", "Order"], ["CreateListing", "Checkout"], ["Listings", "Sellers", "Orders"]),
-    "social": DomainMode("social", ["User", "Post", "Comment", "Follow"], ["CreatePost", "FollowUser"], ["Feed", "Profile", "Messages"]),
-    "forum": DomainMode("forum", ["Topic", "Reply", "User", "Category"], ["CreateTopic", "ReplyToTopic"], ["Topics", "Categories", "Admin"]),
-    "projectmanagement": DomainMode("projectmanagement", ["Project", "Task", "Milestone", "TeamMember"], ["AssignTask", "CompleteTask"], ["Dashboard", "Projects", "Tasks"]),
-    "invoice": DomainMode("invoice", ["Client", "Invoice", "LineItem", "Payment"], ["CreateInvoice", "RecordPayment"], ["Invoices", "Clients", "Reports"]),
-    "pos": DomainMode("pos", ["Product", "Sale", "Register", "Cashier"], ["CreateSale", "RefundSale"], ["Register", "Sales", "Products"]),
-    "supportdesk": DomainMode("supportdesk", ["Ticket", "Customer", "Agent", "Message"], ["CreateTicket", "AssignTicket"], ["Tickets", "Customers", "Agents"]),
-    "logistics": DomainMode("logistics", ["Shipment", "Carrier", "Warehouse", "Route"], ["CreateShipment", "UpdateShipment"], ["Shipments", "Warehouses", "Routes"]),
+SUPPORTED_MODES = [
+    "custom",
+    "ecommerce",
+    "construction",
+    "crm",
+    "school",
+    "portfolio",
+    "restaurant",
+    "booking",
+    "dashboard",
+    "blog",
+    "cms",
+    "church",
+    "gym",
+    "inventory",
+    "delivery",
+    "realestate",
+    "healthcare",
+    "finance",
+    "trading",
+    "security",
+    "nonprofit",
+    "event",
+    "hotel",
+    "salon",
+    "learning",
+    "marketplace",
+    "social",
+    "forum",
+    "projectmanagement",
+    "invoice",
+    "pos",
+    "supportdesk",
+    "logistics",
+]
+
+PAGE_TYPES = [
+    "landing",
+    "marketing",
+    "catalog",
+    "product_detail",
+    "checkout",
+    "dashboard",
+    "admin",
+    "form",
+    "portfolio",
+    "profile",
+    "settings",
+    "report",
+    "calendar",
+    "booking",
+    "pipeline",
+    "table",
+    "custom",
+]
+
+MODE_HERO_COPY = {
+    "school": ("Build a school community online", "Admissions, notices, events, academics, and student life."),
+    "security": ("Monitor security from one dashboard", "Targets, scans, findings, and reports."),
+    "trading": ("Track strategies and market decisions", "Signals, trades, risk, and journal history."),
+    "gym": ("Manage members, billing, and check-ins", "Plans, invoices, payments, and attendance."),
+    "ecommerce": ("Sell products with a complete storefront", "Catalog, cart, checkout, and orders."),
+    "construction": ("Show services, projects, and estimates", "Leads, portfolios, quotes, and service workflows."),
+    "crm": ("Manage customer relationships", "Leads, contacts, pipeline stages, and activity history."),
+    "restaurant": ("Run menus, orders, and reservations", "Dining pages, bookings, menus, and kitchen workflows."),
+    "inventory": ("Track stock from one workspace", "Products, suppliers, movements, and alerts."),
+    "logistics": ("Coordinate deliveries and operations", "Shipments, dispatch, drivers, routes, and status tracking."),
+}
+
+DOMAIN_MODES = {
+    mode: DomainMode(
+        name=mode,
+        description={
+            "custom": "No domain defaults are added; the developer controls every declaration.",
+            "ecommerce": "Storefront, catalog, cart, checkout, customers, and orders.",
+            "construction": "Services, project portfolio, lead capture, estimates, and quote workflows.",
+            "crm": "Contacts, deals, pipelines, activities, and customer reporting.",
+            "school": "Admissions, notices, academics, events, staff, and student-life content.",
+            "security": "Targets, scans, findings, reports, and security workflows.",
+            "trading": "Signals, trades, strategies, risk, and trading journals.",
+            "gym": "Members, plans, invoices, attendance, and billing workflows.",
+            "logistics": "Shipments, dispatch, drivers, routes, and delivery status.",
+        }.get(mode, f"{mode.title()} project defaults."),
+    )
+    for mode in SUPPORTED_MODES
 }
 
 
+def normalize_domain_mode(mode: str) -> str:
+    normalized = (mode or "custom").replace("-", "").replace("_", "").lower()
+    return normalized if normalized in SUPPORTED_MODES else "custom"
+
+
 def normalize_mode(mode: str) -> str:
-    return (mode or "custom").replace("-", "").replace("_", "").lower()
+    return normalize_domain_mode(mode)
 
 
 def get_mode(mode: str) -> DomainMode:
-    return MODES.get(normalize_mode(mode), DomainMode(normalize_mode(mode), description="User-defined mode."))
+    return DOMAIN_MODES[normalize_domain_mode(mode)]
+
+
+def hero_copy_for_mode(mode: str) -> tuple[str, str]:
+    return MODE_HERO_COPY.get(normalize_domain_mode(mode), (f"{mode.title()} application", "Generated from NovaDev source."))

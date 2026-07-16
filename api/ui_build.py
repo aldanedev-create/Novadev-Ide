@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from http.server import BaseHTTPRequestHandler
 
-from ._common import get_code, handle_options, run_source, send_error, send_json
+from ._common import build_ui_source, get_code, handle_options, send_error, send_json
 
 
 class handler(BaseHTTPRequestHandler):
@@ -11,6 +11,6 @@ class handler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         try:
-            send_json(self, run_source(get_code(self)))
-        except Exception as exc:  # noqa: BLE001 - return readable language errors.
+            send_json(self, {"ok": True, **build_ui_source(get_code(self))})
+        except Exception as exc:  # noqa: BLE001
             send_error(self, exc)

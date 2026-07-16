@@ -7,6 +7,7 @@ full-stack NovaDev declarations (`app`, `table`, `page`, `route`, `theme`) and a
 small dynamic programming language (`let`, `print`, `if`, `while`, `function`).
 """
 
+import textwrap
 from typing import Any, Iterable, List, Optional
 
 from .ast_nodes import (
@@ -79,6 +80,11 @@ NAME_TOKENS = {
     "AS",
     "DEFAULT",
     "PLUGIN",
+    "PACKAGE",
+    "PROVIDER",
+    "VERSION",
+    "TARGET",
+    "REQUIRES",
     "WORKFLOW",
     "INPUT",
     "CREATES",
@@ -142,6 +148,8 @@ NAME_TOKENS = {
     "FOR",
     "IN",
     "FUNCTION",
+    "ASYNC",
+    "AWAIT",
     "CLASS",
     "TRY",
     "CATCH",
@@ -153,6 +161,8 @@ NAME_TOKENS = {
     "FILE",
     "TEMPLATE",
     "RESOURCES",
+    "FEATURES",
+    "FEATURE",
     "ASSETS",
     "IGNORE",
     "LANGUAGE",
@@ -162,6 +172,23 @@ NAME_TOKENS = {
     "STACK",
     "DATABASE",
     "LAYOUT",
+    "SEED",
+    "JOB",
+    "TEST",
+    "EXPECT",
+    "ON",
+    "UPDATES",
+    "SCHEDULE",
+    "RUN",
+    "EVERY",
+    "AT",
+    "ASSET",
+    "RELATIONSHIP",
+    "BELONGS",
+    "HASMANY",
+    "PERMISSION",
+    "API",
+    "ENV",
     "COMPONENT",
     "REPEAT",
     "GENERATOR",
@@ -183,8 +210,9 @@ DECLARATION_TYPES = (TableNode, PageNode, RouteNode, ThemeNode, AuthNode)
 
 
 class Parser:
-    def __init__(self, tokens: List[Token]):
+    def __init__(self, tokens: List[Token], source: str = ""):
         self.tokens = tokens
+        self.source = source
         self.current = 0
 
     def parse(self) -> Program:
@@ -231,6 +259,10 @@ class Parser:
             return self.export_declaration()
         if self.match("PLUGIN"):
             return self.plugin_declaration()
+        if self.match("PACKAGE"):
+            return self.high_level_block("package")
+        if self.match("REQUIRES"):
+            return self.high_level_block("requires")
         if self.match("WORKFLOW"):
             return self.workflow_declaration()
         if self.match("MODULE"):
@@ -296,6 +328,28 @@ class Parser:
             return self.project_declaration()
         if self.match("GENERATOR"):
             return self.generator_declaration()
+        if self.match("LAYOUT"):
+            return self.high_level_block("layout")
+        if self.match("SEED"):
+            return self.high_level_block("seed")
+        if self.match("ACTION"):
+            return self.high_level_block("action")
+        if self.match("JOB"):
+            return self.high_level_block("job")
+        if self.match("TEST"):
+            return self.high_level_block("test")
+        if self.match("ASSET"):
+            return self.high_level_block("asset")
+        if self.match("RELATIONSHIP"):
+            return self.high_level_block("relationship")
+        if self.match("PERMISSION"):
+            return self.high_level_block("permission")
+        if self.match("API"):
+            return self.high_level_block("api")
+        if self.match("FEATURES"):
+            return self.high_level_block("features")
+        if self.match("FEATURE"):
+            return self.high_level_block("feature")
         if self.match("CLASS"):
             return self.class_declaration()
         if self.match("FUNCTION"):
@@ -444,7 +498,10 @@ class Parser:
             elif self.match("CLEARS"):
                 steps.append(ComponentNode("clears", name=self.consume_word("Expected cleared entity")))
             elif self.match("VALIDATES"):
-                steps.append(ComponentNode("validates", name=self.consume_dotted_name("Expected validation target")))
+                names = self.name_list_until_line_or_brace()
+                if not names:
+                    raise NovaSyntaxError("Expected validation target", self.peek())
+                steps.append(ComponentNode("validates", name=names[0], props={"fields": names}))
             elif self.match("USES"):
                 steps.append(ComponentNode("uses", name=self.consume_dotted_name("Expected module.function after uses")))
             elif self.match("NOTIFY"):
@@ -541,6 +598,18 @@ class Parser:
             name = self.consume_word("Expected custom block name or '{'")
         self.consume("LBRACE", f"Expected '{{' after custom {target}")
         self.skip_newlines()
+        language_map = {"py": "python", "javascript": "js"}
+        if target in {"python", "py", "js", "javascript", "css", "sql"}:
+            language = language_map.get(target, target)
+            if self.match("STRING"):
+                code = self.previous().value
+                self.skip_newlines()
+                self.consume("RBRACE", f"Expected '}}' after custom {target}")
+                self.consume_statement_end()
+                return CustomCodeNode(language=language, code=code, target=language, name=name)
+            code = self.raw_block_source()
+            self.consume_statement_end()
+            return CustomCodeNode(language=language, code=code, target=language, name=name)
         if target in {"css", "sql"} and self.match("STRING"):
             code = self.previous().value
             self.skip_newlines()
@@ -588,7 +657,7 @@ class Parser:
                     props["structure"] = self.consume_word("Expected generator or structure name after project use")
                     self.consume_statement_end()
                     continue
-                value = self.consume_word(f"Expected value after project {key}")
+                value = self.declaration_value()
                 props[key] = value
                 self.consume_statement_end()
             self.consume("RBRACE", "Expected '}' to close project block")
@@ -668,6 +737,71 @@ class Parser:
         self.consume_statement_end()
         return entries
 
+    def high_level_block(self, kind: str) -> ComponentNode:
+        name = ""
+        if not self.check("LBRACE"):
+            if kind in {"feature", "requires"}:
+                name = self.consume_dotted_name(f"Expected {kind} name")
+            else:
+                name = self.consume_word(f"Expected {kind} name")
+        props: dict[str, Any] = {}
+        if self.match("LBRACE"):
+            props = self.declaration_properties(kind)
+        elif not self.check("NEWLINE") and not self.check("RBRACE") and not self.check("EOF"):
+            props["value"] = self.declaration_value()
+        self.consume_statement_end()
+        return ComponentNode(kind, name=name, props=props)
+
+    def declaration_properties(self, kind: str) -> dict[str, Any]:
+        """Parse generic high-level declaration bodies into structured AST data."""
+        props: dict[str, Any] = {}
+        while not self.check("RBRACE") and not self.at_end():
+            self.skip_newlines()
+            if self.check("RBRACE"):
+                break
+            key = self.consume_word(f"Expected property inside {kind}")
+            props[key] = self.declaration_value()
+            self.consume_statement_end()
+        self.consume("RBRACE", f"Expected '}}' to close {kind}")
+        return props
+
+    def declaration_value(self) -> Any:
+        tokens: List[Token] = []
+        while not self.check("NEWLINE") and not self.check("RBRACE") and not self.check("EOF"):
+            tokens.append(self.advance())
+        if not tokens:
+            return True
+        if len(tokens) == 1:
+            return tokens[0].value
+        if any(token.type == "COMMA" for token in tokens):
+            values: List[Any] = []
+            current: List[Token] = []
+            for token in [*tokens, Token("COMMA", ",", 0, 0)]:
+                if token.type == "COMMA":
+                    if current:
+                        values.append(current[0].value if len(current) == 1 else self.tokens_to_source(current))
+                        current = []
+                else:
+                    current.append(token)
+            return values
+        return self.tokens_to_source(tokens)
+
+    def tokens_to_source(self, tokens: List[Token]) -> str:
+        result = ""
+        previous = ""
+        no_space_before = {"DOT", "COMMA", "RPAREN", "RBRACKET", "COLON"}
+        no_space_after = {"DOT", "LPAREN", "LBRACKET"}
+        for token in tokens:
+            if token.type == "STRING":
+                text = repr(str(token.value))
+            else:
+                text = str(token.value).lower() if isinstance(token.value, bool) else str(token.value)
+            if result and token.type not in no_space_before and previous not in no_space_after:
+                result += " "
+            result += text
+            previous = token.type
+        return result
+
     def generator_declaration(self) -> GeneratorNode:
         generator = GeneratorNode()
         self.consume("LBRACE", "Expected '{' after generator")
@@ -744,6 +878,12 @@ class Parser:
             page.page_type = page_type
             self.consume_statement_end()
             return ComponentNode("type", name=page_type)
+        if self.match("ROLE"):
+            role = self.consume_word("Expected role name after role")
+            page.required_role = role
+            page.requires_auth = True
+            self.consume_statement_end()
+            return ComponentNode("require", props={"auth": True, "role": role})
         if self.match("HERO"):
             return self.hero_component()
         if self.match("SECTION"):
@@ -781,6 +921,10 @@ class Parser:
             return self.modal_component()
         if self.match("BUTTON"):
             return self.button_component()
+        if self.match("COMPONENT"):
+            return self.generic_page_component("component")
+        if self.match("REPEAT"):
+            return self.generic_page_component("repeat")
         if self.match("USE"):
             kind = self.consume_word("Expected page use target")
             name = self.consume_word(f"Expected name after use {kind}")
@@ -820,10 +964,21 @@ class Parser:
     def section_component(self) -> ComponentNode:
         name = self.consume_word("Expected section name")
         source = ""
+        layout = ""
         if self.match("FROM"):
             source = self.consume_word("Expected table/entity after from")
+        if self.match("LAYOUT"):
+            layout = self.consume_word("Expected layout name after section layout")
         self.consume_statement_end()
-        return ComponentNode("section", name=name, props={"source": source})
+        return ComponentNode("section", name=name, props={"source": source, "layout": layout})
+
+    def generic_page_component(self, kind: str) -> ComponentNode:
+        name = self.consume_title_value(f"Expected {kind} name")
+        props: dict[str, Any] = {}
+        if self.match("LBRACE"):
+            props = self.declaration_properties(kind)
+        self.consume_statement_end()
+        return ComponentNode(kind, name=name, props=props)
 
     def apply_require(self, target: Any) -> None:
         if self.match("AUTH"):
@@ -957,8 +1112,14 @@ class Parser:
                     props["fields"] = self.name_list_until_line_or_brace()
                 elif self.match("SUBMIT"):
                     props["submit"] = self.consume_title_value("Expected submit button text")
+                elif self.match("ON"):
+                    self.consume("SUBMIT", "Expected 'submit' after form 'on'")
+                    props["workflow"] = self.consume_dotted_name("Expected workflow name after 'on submit'")
+                elif self.check_value("workflow") or self.check_value("action"):
+                    self.advance()
+                    props["workflow"] = self.consume_dotted_name("Expected workflow name")
                 else:
-                    raise NovaSyntaxError("Forms support fields and submit properties", self.peek())
+                    raise NovaSyntaxError("Forms support fields, submit, workflow, and on submit properties", self.peek())
                 self.consume_statement_end()
             self.consume("RBRACE", "Expected '}' to close form block")
         self.consume_statement_end()
@@ -1292,8 +1453,10 @@ class Parser:
         return ObjectNode(entries)
 
     def raw_block_source(self) -> str:
+        opening_token = self.previous()
         depth = 1
         tokens: List[Token] = []
+        closing_token: Token | None = None
         while not self.at_end() and depth > 0:
             token = self.advance()
             if token.type == "LBRACE":
@@ -1303,11 +1466,21 @@ class Parser:
                 depth -= 1
                 if depth > 0:
                     tokens.append(token)
+                else:
+                    closing_token = token
             else:
                 tokens.append(token)
         if depth != 0:
             raise NovaSyntaxError("Unterminated raw code block", self.previous())
+        if self.source and closing_token is not None:
+            start = self.source_offset(opening_token) + 1
+            end = self.source_offset(closing_token)
+            return textwrap.dedent(self.source[start:end]).strip("\r\n")
         return tokens_to_source(tokens)
+
+    def source_offset(self, token: Token) -> int:
+        lines = self.source.splitlines(keepends=True)
+        return sum(len(line) for line in lines[: token.line - 1]) + token.column - 1
 
     def filesystem_declaration(self) -> FilesystemNode:
         node = FilesystemNode()
@@ -1542,7 +1715,7 @@ class NovaParser(Parser):
     """Compatibility wrapper: old code passed source text directly."""
 
     def __init__(self, source: str):
-        super().__init__(Lexer(source).tokenize())
+        super().__init__(Lexer(source).tokenize(), source)
 
 
 def parse_source(source: str) -> Program:
